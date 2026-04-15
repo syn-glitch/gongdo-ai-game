@@ -690,7 +690,16 @@
     const avatar = document.createElement('span');
     avatar.className = 'tutor-avatar';
     avatar.setAttribute('aria-hidden', 'true');
-    avatar.textContent = sender === 'bot' ? '🦸' : '🙋';
+    if (sender === 'bot') {
+      const img = document.createElement('img');
+      img.className = 'mascot-img';
+      img.src = './에셋_assets/캐릭터_characters/gongdossem.png';
+      img.alt = '';
+      img.onerror = () => { avatar.textContent = '🦸'; };
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = '🙋';
+    }
     const bubble = document.createElement('div');
     bubble.className = 'tutor-bubble';
     if (opts.pending) bubble.classList.add('is-pending');

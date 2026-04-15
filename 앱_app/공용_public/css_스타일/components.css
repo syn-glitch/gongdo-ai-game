@@ -318,6 +318,38 @@
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
 }
+
+/* ─────── 공도쌤 마스코트 이미지 (모든 UI에서 🦸 이모지 대체) ─────── */
+.mascot-img {
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* 생성중 모달 (XL, 84px) */
+.gen-character .mascot-img,
+.mascot-img-xl {
+  width: 84px;
+  height: 84px;
+  filter: drop-shadow(2px 2px 0 var(--color-black));
+}
+
+/* 튜터 FAB (내부 이미지는 원 안에 꽉 차게) */
+.tutor-fab img.tutor-fab-avatar.mascot-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  filter: drop-shadow(1px 1px 0 var(--color-black));
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* 드로어 헤더 · 튜터 메시지 아바타 (원형 배경 안의 이미지) */
+.drawer-head-avatar .mascot-img,
+.tutor-avatar .mascot-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
 .character-name {
   font-size: var(--fs-md);
   font-weight: 800;

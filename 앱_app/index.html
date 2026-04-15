@@ -247,7 +247,8 @@
     aria-label="공도쌤 AI튜터 열기"
     aria-controls="tutor-drawer"
     aria-expanded="false">
-    <span class="tutor-fab-avatar" aria-hidden="true">🦸</span>
+    <img class="tutor-fab-avatar mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt="" aria-hidden="true"
+         onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tutor-fab-avatar',textContent:'🦸'}))">
     <span class="tutor-fab-label">AI튜터</span>
     <span class="tutor-fab-pulse" aria-hidden="true"></span>
   </button>
@@ -256,7 +257,10 @@
   <aside class="tutor-drawer" id="tutor-drawer" role="dialog" aria-modal="false" aria-labelledby="tutor-drawer-title" hidden>
     <header class="drawer-head">
       <h2 id="tutor-drawer-title" class="drawer-head-title">
-        <span class="drawer-head-avatar" aria-hidden="true">🦸</span>
+        <span class="drawer-head-avatar" aria-hidden="true">
+          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt=""
+               onerror="this.replaceWith(document.createTextNode('🦸'))">
+        </span>
         공도쌤에게 물어보기
       </h2>
       <button type="button" class="drawer-close" id="tutor-close" aria-label="AI튜터 닫기">
@@ -265,7 +269,10 @@
     </header>
     <div class="tutor-messages" id="tutor-messages" role="log" aria-live="polite" aria-label="튜터 대화 내용">
       <div class="tutor-message tutor-message-bot">
-        <span class="tutor-avatar" aria-hidden="true">🦸</span>
+        <span class="tutor-avatar" aria-hidden="true">
+          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt=""
+               onerror="this.replaceWith(document.createTextNode('🦸'))">
+        </span>
         <div class="tutor-bubble">
           안녕하세요! 저는 공도쌤이에요. 🌟<br>
           게임 만들기가 어려우면 언제든 물어봐요!
@@ -367,7 +374,10 @@
   <!-- AI 게임 생성 중 팝업 -->
   <div id="generating-modal" class="modal-overlay" hidden role="status" aria-live="polite" aria-labelledby="gen-title">
     <div class="modal-card generating-card">
-      <div class="gen-character" aria-hidden="true">🦸</div>
+      <div class="gen-character" aria-hidden="true">
+        <img class="mascot-img mascot-img-xl" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt="공도쌤"
+             onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🦸',style:'font-size:84px'}))">
+      </div>
       <h2 id="gen-title" class="gen-title">AI가 게임을 만들고 있어요</h2>
       <p id="gen-message" class="gen-message">우주선에 시동을 걸어요... 🚀</p>
       <div class="gen-progress" role="progressbar" aria-label="생성 진행률" aria-valuetext="만드는 중">
