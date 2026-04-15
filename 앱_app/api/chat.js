@@ -96,13 +96,13 @@ function drawEnemy(ctx, x, y) {
 - 학생 개인정보(이름·학교·주소)는 게임에 포함하지 않고 익명 캐릭터로 대체합니다.
 - 외부 URL 접근, 폼 전송, 쿠키 사용 금지.
 
-【넷마블 캐릭터 이미지 참조】
-문서에 "토리", "ㅋㅋ", "밥", "레옹" 캐릭터가 언급되면 아래 경로 이미지를 <img>로 삽입합니다:
-- 토리: /에셋_assets/캐릭터_characters/tory_idle.png
-- ㅋㅋ: /에셋_assets/캐릭터_characters/kk_idle.png
-- 밥: /에셋_assets/캐릭터_characters/bob_idle.png
-- 레옹: /에셋_assets/캐릭터_characters/leon_idle.png
-- 지구본 배경: /에셋_assets/배경_backgrounds/worldmap_1920.jpg
+【넷마블 캐릭터 이미지 참조 — 매우 중요】
+문서에 캐릭터가 언급되면 반드시 **학생 문서에 적힌 절대 URL** 을 그대로 사용합니다. 상대 경로(/에셋_assets/...) 를 임의로 만들어 쓰지 마세요 — iframe srcdoc 에서 작동하지 않습니다.
+
+예시: 문서에 "- 주인공: ㅋㅋ (이미지: https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png)" 이라고 적혀있으면, 해당 URL 을 그대로 `<img src="https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png">` 로 사용합니다.
+
+만약 문서에 이미지 URL 이 명시되지 않았다면 이모지 폴백만 사용:
+- 토리 → 👒 / ㅋㅋ → 🦸 / 밥 → 🐰 / 레옹 → 🦁
 
 【임시 에셋 폴백 — 매우 중요. 반드시 준수】
 현재 캐릭터 PNG 파일은 아직 준비 중이어서 로드가 실패할 확률이 매우 높습니다. 따라서 **캐릭터는 반드시 이모지로 렌더링** 하는 코드를 기본으로 작성하고, 실제 이미지 로드는 보조 수단으로만 시도합니다.

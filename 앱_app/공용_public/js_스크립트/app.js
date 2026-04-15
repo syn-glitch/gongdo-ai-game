@@ -876,7 +876,9 @@
       return;
     }
 
-    const newLine = `- 주인공: ${label} (이미지: /에셋_assets/캐릭터_characters/${file})`;
+    // 절대 URL 사용 — iframe srcdoc 에서도 로드 가능 (m-03: 디버그 로그)
+    const origin = window.location.origin;
+    const newLine = `- 주인공: ${label} (이미지: ${origin}/에셋_assets/캐릭터_characters/${file})`;
     const current = editor.value;
     const regex = /^-?\s*주인공:.*$/m;
 
@@ -1280,6 +1282,8 @@
 
   // ─────────── 초기화 ───────────
   document.addEventListener('DOMContentLoaded', () => {
+    // m-03: 환경 디버그 로그 (로컬·Vercel·커스텀 도메인 자동 식별)
+    console.log('[공도 AI-Game] origin:', window.location.origin);
     loadConfig();
     initLessons();
     initHeaderButtons();
