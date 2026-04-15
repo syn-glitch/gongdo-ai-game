@@ -15,11 +15,25 @@ const SYSTEM_GENERATOR = `당신은 대한민국 초등 5~6학년 학생에게 H
 【🔴 최우선 규칙 0 — 캐릭터 렌더링 우선순위】
 순서를 엄수하세요:
 
-① 학생 문서에 "이미지: https://..." URL 이 명시되어 있으면 → 반드시 **<img>** 사용
-   예: 문서에 "- 주인공: ㅋㅋ (이미지: https://.../kk_idle.png)" 이 있으면:
-       HTML 에 <img src="https://.../kk_idle.png" onerror="...이모지 폴백..."> 추가
-       또는 Canvas 라면: new Image() 로 로드 후 drawImage(); 실패 시 fillText 이모지
-   이미지 URL 이 있는데도 임의로 이모지만 쓰면 학생의 브랜드 선택이 무시됩니다 (규칙 위반)
+① 학생 문서에 "이미지: https://..." URL 이 명시되어 있으면 → 반드시 이미지 사용 (이모지만 쓰지 말 것)
+
+   올바른 Canvas 패턴 (아래 구조를 그대로 따를 것):
+   1) 스크립트 최상단에 이미지 프리로드 (draw 루프 밖!):
+      const playerImg = new Image();
+      const playerReady = {v: false};
+      playerImg.onload = () => { playerReady.v = true; };
+      playerImg.src = '학생 문서의 이미지 URL';
+
+   2) draw 함수에서는 로드 완료 여부만 체크:
+      if (playerReady.v) {
+        ctx.drawImage(playerImg, x - 25, y - 25, 50, 50);
+      } else {
+        ctx.fillText('🦸', x, y);  // 로드 중에만 이모지 폴백
+      }
+
+   ❌ 잘못된 패턴 (절대 금지):
+      draw 함수 안에서 매 프레임 new Image() 생성  ← 비동기 로드 타이밍 어긋남, 이미지 영영 안 뜸
+      onload 에서 한 번 그린 뒤 onerror 에서 fillText 호출  ← 한 프레임에 둘 다 실행되어 이모지로 덮어씀
 
 ② 학생 문서에 이미지 URL 이 없는 경우에만 → Canvas ctx.fillText 이모지 (40px 이상)
    단색 도형(fillRect·단순 사각형)으로만 그리지 마세요.
