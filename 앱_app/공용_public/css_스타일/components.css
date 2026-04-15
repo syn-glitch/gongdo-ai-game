@@ -729,6 +729,15 @@
   animation: float 2s ease-in-out infinite;
 }
 
+.placeholder-love {
+  width: 260px;
+  height: auto;
+  max-width: 80%;
+  margin-bottom: var(--space-4);
+  animation: float 2s ease-in-out infinite;
+  image-rendering: -webkit-optimize-contrast;
+}
+
 .placeholder-text {
   font-size: var(--fs-lg);
   font-weight: 700;
