@@ -12,23 +12,26 @@ const MODEL = 'claude-haiku-4-5-20251001';
 // ─────────── 시스템 프롬프트 ───────────
 const SYSTEM_GENERATOR = `당신은 대한민국 초등 5~6학년 학생에게 HTML 게임 만들기를 도와주는 친절한 AI 선생님 "공도쌤"입니다.
 
-【🔴 최우선 규칙 0 — 캐릭터는 반드시 이모지 (단색 도형 금지)】
-**플레이어 캐릭터, 적, 주요 오브젝트는 절대로 단색 도형(fillRect·fillCircle·단순 사각형)으로만 그리지 마세요.**
-반드시 Canvas ctx.fillText 로 큰 이모지(40px 이상)를 렌더링하세요. 단색 도형은 배경/HP바/총알 같은 부속 요소에만 허용됩니다.
+【🔴 최우선 규칙 0 — 캐릭터 렌더링 우선순위】
+순서를 엄수하세요:
 
-이모지 고정 매핑 — 예외 없음. **캐릭터 이름(ㅋㅋ·토리·밥·레옹)은 정체성 표시용이지 절대 fillText 인자로 넣지 마세요**. 매핑된 이모지만 사용합니다:
-- 문서에 "주인공: ㅋㅋ" → 반드시 \`ctx.fillText('🦸', x, y)\` (글자 "ㅋㅋ"를 그리면 안 됨)
-- 문서에 "주인공: 토리" → 반드시 \`ctx.fillText('👒', x, y)\`
-- 문서에 "주인공: 밥"   → 반드시 \`ctx.fillText('🐰', x, y)\`
-- 문서에 "주인공: 레옹" → 반드시 \`ctx.fillText('🦁', x, y)\`
-- 일반 적 → 👾 또는 👽 (fillText 로)
-- 보스 적 → 👹 (fillText 로)
-- 미사일/총알 → 작은 fillRect 또는 fillCircle (허용)
-- 아이템 → ⭐ 💎 🍎 (fillText 로)
-- 폭발 → 💥 (fillText 로)
+① 학생 문서에 "이미지: https://..." URL 이 명시되어 있으면 → 반드시 **<img>** 사용
+   예: 문서에 "- 주인공: ㅋㅋ (이미지: https://.../kk_idle.png)" 이 있으면:
+       HTML 에 <img src="https://.../kk_idle.png" onerror="...이모지 폴백..."> 추가
+       또는 Canvas 라면: new Image() 로 로드 후 drawImage(); 실패 시 fillText 이모지
+   이미지 URL 이 있는데도 임의로 이모지만 쓰면 학생의 브랜드 선택이 무시됩니다 (규칙 위반)
 
-❌ 금지 예: \`ctx.fillText('ㅋㅋ', x, y)\`   ← 캐릭터 이름을 글자로 그리는 것 금지
-✅ 올바른 예: \`ctx.fillText('🦸', x, y)\`   ← 매핑된 이모지 사용
+② 학생 문서에 이미지 URL 이 없는 경우에만 → Canvas ctx.fillText 이모지 (40px 이상)
+   단색 도형(fillRect·단순 사각형)으로만 그리지 마세요.
+
+폴백용 이모지 매핑 (이미지 URL 없을 때만 사용):
+- ㅋㅋ → 🦸 / 토리 → 👒 / 밥 → 🐰 / 레옹 → 🦁
+- 일반 적 → 👾 👽 / 보스 → 👹 / 아이템 → ⭐ 💎 🍎 / 폭발 → 💥
+- 캐릭터 이름(ㅋㅋ·토리 등)을 fillText 인자로 그리면 안 됨 (이모지로 치환됨)
+
+❌ 금지: ctx.fillText('ㅋㅋ', x, y)   ← 캐릭터 이름 글자 그리기 금지
+✅ 올바름 (이미지 O): img src="..." 로 drawImage 또는 DOM img
+✅ 올바름 (이미지 X): ctx.fillText('🦸', x, y)
 
 【🔴 최우선 규칙 0-B — 배경 테마】
 문서에 "배경: [테마]" 가 있으면 그 테마의 분위기를 Canvas 배경에 **반드시 반영**합니다. 단색 검정으로 끝내지 마세요.
@@ -204,16 +207,14 @@ function forceEmojiCharacters(html) {
   if (!html) return html;
   let out = html;
 
+  // fillText 호출 내부의 캐릭터 이름만 이모지로 치환 (이미지 URL·alt·HTML 속성 보존)
   for (const [name, emoji] of Object.entries(CHAR_TO_EMOJI)) {
-    // 1) 따옴표로 정확히 감싼 단독 이름: 'ㅋㅋ' "ㅋㅋ" `ㅋㅋ`
-    const exactQuoted = new RegExp(`(['"\`])${name}\\1`, 'g');
-    out = out.replace(exactQuoted, `$1${emoji}$1`);
-
-    // 2) fillText('...ㅋㅋ...', x, y) 처럼 문자열 내부에 이름이 섞인 경우 → 이름만 이모지로 교체
-    const insideFillText = new RegExp(`(fillText\\(\\s*['"\`][^'"\`]*)${name}([^'"\`]*['"\`])`, 'g');
+    const insideFillText = new RegExp(
+      `(fillText\\(\\s*['"\`][^'"\`]*)${name}([^'"\`]*['"\`])`,
+      'g'
+    );
     out = out.replace(insideFillText, `$1${emoji}$2`);
   }
-
   return out;
 }
 
@@ -395,12 +396,22 @@ export default async function handler(req, res) {
       if (musicScore) html = injectBgmIntoGame(html, musicScore);
     }
 
+    // 디버그 메타 (규칙 0 준수 확인용)
+    let debugMeta = null;
+    if (mode === 'generator' && html) {
+      const imgCount = (html.match(/<img\s/gi) || []).length;
+      const fillTextCount = (html.match(/fillText\s*\(/gi) || []).length;
+      const hasCharacterUrl = /에셋_assets\/캐릭터_characters\/[a-z_]+\.png/i.test(html);
+      debugMeta = { imgCount, fillTextCount, hasCharacterUrl };
+    }
+
     res.status(200).json({
       mode,
       reply: mode === 'tutor' ? raw.trim() : undefined,
       html,
       usage: msg.usage,
       rateLimit: { used: rl.used, limit: rl.limit, resetInSec: rl.resetInSec },
+      debug: debugMeta,
     });
   } catch (err) {
     console.error('[api/chat] Anthropic 호출 실패:', err?.message || err);
