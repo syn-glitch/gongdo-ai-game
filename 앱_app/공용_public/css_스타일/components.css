@@ -661,6 +661,11 @@
 .game-placeholder {
   text-align: center;
   color: var(--color-brown-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .game-iframe {
@@ -733,9 +738,15 @@
   width: 260px;
   height: auto;
   max-width: 80%;
-  margin-bottom: var(--space-4);
+  margin: 0 auto var(--space-4);
+  display: block;
   animation: float 2s ease-in-out infinite;
   image-rendering: -webkit-optimize-contrast;
+}
+
+.placeholder-text {
+  text-align: center;
+  width: 100%;
 }
 
 .placeholder-text {
