@@ -311,6 +311,13 @@
   line-height: 1;
   filter: drop-shadow(1px 1px 0 var(--color-black));
 }
+
+.character-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
 .character-name {
   font-size: var(--fs-md);
   font-weight: 800;

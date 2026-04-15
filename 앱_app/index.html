@@ -75,37 +75,38 @@
           </div>
           <ul class="character-grid" id="character-grid">
             <li>
-              <button type="button" class="character-card" data-char="kk" data-label="ㅋㅋ" data-file="kk_idle.png">
-                <span class="character-emoji" aria-hidden="true">🦸</span>
+              <button type="button" class="character-card" data-char="kk" data-label="ㅋㅋ" data-file="kk_idle.png" data-emoji="🦸">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/kk_idle.png" alt="ㅋㅋ 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🦸'}))">
                 <span class="character-name">ㅋㅋ</span>
                 <span class="character-desc">용감 장난꾸러기</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="tory" data-label="토리" data-file="tory_idle.png">
-                <span class="character-emoji" aria-hidden="true">👒</span>
+              <button type="button" class="character-card" data-char="tory" data-label="토리" data-file="tory_idle.png" data-emoji="👒">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/tory_idle.png" alt="토리 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'👒'}))">
                 <span class="character-name">토리</span>
                 <span class="character-desc">똑똑 다정</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="bob" data-label="밥" data-file="bob_idle.png">
-                <span class="character-emoji" aria-hidden="true">🐰</span>
+              <button type="button" class="character-card" data-char="bob" data-label="밥" data-file="bob_idle.png" data-emoji="🐰">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/bob_idle.png" alt="밥 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🐰'}))">
                 <span class="character-name">밥</span>
                 <span class="character-desc">느긋 푸근</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="leon" data-label="레옹" data-file="leon_idle.png">
-                <span class="character-emoji" aria-hidden="true">🦁</span>
+              <button type="button" class="character-card" data-char="leon" data-label="레옹" data-file="leon_idle.png" data-emoji="🦁">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/leon_idle.png" alt="레옹 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🦁'}))">
                 <span class="character-name">레옹</span>
                 <span class="character-desc">용맹 든든</span>
               </button>
             </li>
           </ul>
-          <p class="character-popover-footnote">
-            * 지금은 이모지 임시 · 최종본에는 실제 캐릭터 이미지가 등장해요
-          </p>
         </div>
 
         <div id="theme-popover" class="character-popover theme-popover" hidden role="dialog" aria-label="배경 테마 고르기">
