@@ -1,0 +1,58 @@
+{
+  "version": "v0.1.0",
+  "updated": "2026-04-14",
+  "lessons": [
+    {
+      "no": 1,
+      "title": "바이브코딩 시작",
+      "emoji": "🚀",
+      "file": "lesson1.md",
+      "subtitle": "AI에게 게임을 만들어달라고 부탁해요",
+      "duration_min": 40,
+      "goal": "AI에게 문장으로 말해 게임을 만드는 경험"
+    },
+    {
+      "no": 2,
+      "title": "캐릭터 꾸미기",
+      "emoji": "🎭",
+      "file": "lesson2.md",
+      "subtitle": "넷마블 친구들을 게임에 넣어요",
+      "duration_min": 40,
+      "goal": "IP 캐릭터 삽입 · 색상/배경 변경"
+    },
+    {
+      "no": 3,
+      "title": "효과음·BGM",
+      "emoji": "🎵",
+      "file": "lesson3.md",
+      "subtitle": "게임에 음악을 더해요",
+      "duration_min": 40,
+      "goal": "AI로 BGM 생성 · 게임에 삽입"
+    },
+    {
+      "no": 4,
+      "title": "발표 자료 만들기",
+      "emoji": "📣",
+      "file": "lesson4.md",
+      "subtitle": "내 게임을 친구들에게 소개해요",
+      "duration_min": 40,
+      "goal": "작품 소개글 · 프롬프트 히스토리 정리"
+    },
+    {
+      "no": 5,
+      "title": "AI 게임 공유회",
+      "emoji": "🎉",
+      "file": "lesson5.md",
+      "subtitle": "친구들의 게임을 함께 플레이해요",
+      "duration_min": 40,
+      "goal": "동료 학습 · 피드백 나누기"
+    }
+  ],
+  "myworks_folders": [
+    { "lesson": 1, "label": "1차시 작품" },
+    { "lesson": 2, "label": "2차시 작품" },
+    { "lesson": 3, "label": "3차시 작품" },
+    { "lesson": 4, "label": "4차시 작품" },
+    { "lesson": 5, "label": "5차시 작품" }
+  ]
+}

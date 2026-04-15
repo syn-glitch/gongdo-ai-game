@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether Strike: Neon Abyss</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-pink: #ff00ff;
+            --bg-dark: #050505;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 600px;
+            background: url('space_bg.png') center center;
+            background-size: cover;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* UI Elements */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stats-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .label {
+            font-size: 12px;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .value {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        #upgrade-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+        }
+
+        .power-tag {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .power-tag.active {
+            opacity: 1;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* Screens */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: all;
+            transition: opacity 0.5s ease;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 56px;
+            margin-bottom: 30px;
+            background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 243, 255, 0.5));
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--neon-blue);
+            border: 2px solid var(--neon-blue);
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 30px var(--neon-blue);
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            color: #888;
+            font-size: 16px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        #game-over-screen h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 40px;
+            color: #ff3b3b;
+            margin-bottom: 10px;
+        }
+
+        .final-score {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        #health-bar-container {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #00f3ff, #bc13fe);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="900" height="600"></canvas>
+
+        <div class="ui-layer">
+            <div class="hud">
+                <div class="stats-box">
+                    <div class="label">Shield Core</div>
+                    <div id="health-bar-container">
+                        <div id="health-bar"></div>
+                    </div>
+                    <div class="label" style="margin-top: 5px;">Aether Dust</div>
+                    <div id="score-val" class="value">00000</div>
+                </div>
+                <div class="stats-box">
+                    <div class="label">System Wave</div>
+                    <div id="wave-val" class="value">1</div>
+                </div>
+            </div>
+
+            <div id="upgrade-indicator">
+                <div id="tag-multishot" class="power-tag">MULTI-BOLT</div>
+                <div id="tag-rapid" class="power-tag">RAPID-FIRE</div>
+                <div id="tag-shield" class="power-tag">AEGIS ACTIVE</div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <h1>AETHER STRIKE</h1>
+            <button class="btn" id="start-btn">Initiate Launch</button>
+            <div class="instructions">
+                [WASD] 또는 [방향키] : 기체 이동<br>
+                [SPACE] : 에테르 캐논 발사<br>
+                빛나는 구체를 모아 시스템을 오버클럭하세요!
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="overlay hidden">
+            <h2>SYSTEM COLLAPSE</h2>
+            <div class="final-score">Final Aether Dust: <span id="final-score-val">0</span></div>
+            <button class="btn" id="restart-btn">Re-Initialize</button>
+        </div>
+    </div>
+
+    <script>
+        /** @type {HTMLCanvasElement} */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const playerShipImg = new Image();
+        playerShipImg.src = 'player_ship.png';
+
+        // Game Constants
+        const PLAYER_SPEED = 5;
+        const BULLET_SPEED = 8;
+        const ENEMY_BASE_SPEED = 1.5;
+        const SPAWN_INTERVAL_BASE = 2000;
+
+        // Game State
+        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let score = 0;
+        let wave = 1;
+        let frameCount = 0;
+        let keys = {};
+
+        // Entities
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            w: 80,
+            h: 80,
+            hp: 100,
+            maxHp: 100,
+            fireDelay: 250,
+            lastFire: 0,
+            multiShot: 1,
+            speedBonus: 0
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let powerups = [];
+
+        // Sound Management (Optional)
+        const bgm = new Audio('bgm.mp3');
+        bgm.loop = true;
+
+        // Initialization
+        function init() {
+            score = 0;
+            wave = 1;
+            player.hp = 100;
+            player.x = canvas.width / 2 - player.w / 2;
+            player.y = canvas.height - 120;
+            player.multiShot = 1;
+            player.fireDelay = 250;
+            player.speedBonus = 0;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            powerups = [];
+            updateUI();
+        }
+
+        // Input handling
+        window.addEventListener('keydown', e => keys[e.code] = true);
+        window.addEventListener('keyup', e => keys[e.code] = false);
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            gameState = 'PLAYING';
+            init();
+            bgm.play().catch(() => console.log("Audio play blocked by browser."));
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            gameState = 'PLAYING';
+            init();
+        });
+
+        // Particle System
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1.0,
+                    size: Math.random() * 4 + 1,
+                    color: color || '#00f3ff'
+                });
+            }
+        }
+
+        // Logic Functions
+        function spawnEnemy() {
+            const size = 45 + Math.random() * 25;
+            enemies.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                w: size,
+                h: size,
+                hp: 2 + Math.floor(wave / 2),
+                speed: ENEMY_BASE_SPEED + (wave * 0.15),
+                type: Math.random() > 0.8 ? 'CHASER' : 'NORMAL'
+            });
+        }
+
+        function spawnPowerup(x, y) {
+            if (Math.random() > 0.15) return;
+            const types = ['HP', 'MULTI', 'SPEED'];
+            powerups.push({
+                x, y,
+                w: 24, h: 24,
+                type: types[Math.floor(Math.random() * types.length)]
+            });
+        }
+
+        function update() {
+            if (gameState !== 'PLAYING') return;
+
+            frameCount++;
+
+            // Player Movement
+            const currentSpeed = PLAYER_SPEED + player.speedBonus;
+            if ((keys['ArrowLeft'] || keys['KeyA']) && player.x > 0) player.x -= currentSpeed;
+            if ((keys['ArrowRight'] || keys['KeyD']) && player.x < canvas.width - player.w) player.x += currentSpeed;
+            if ((keys['ArrowUp'] || keys['KeyW']) && player.y > 0) player.y -= currentSpeed;
+            if ((keys['ArrowDown'] || keys['KeyS']) && player.y < canvas.height - player.h) player.y += currentSpeed;
+
+            // Player Shooting
+            const now = Date.now();
+            if (keys['Space'] && now - player.lastFire > player.fireDelay) {
+                if (player.multiShot === 1) {
+                    bullets.push({ x: player.x + player.w / 2 - 3, y: player.y, w: 6, h: 20 });
+                } else if (player.multiShot === 2) {
+                    bullets.push({ x: player.x + 15, y: player.y + 10, w: 6, h: 20 });
+                    bullets.push({ x: player.x + player.w - 21, y: player.y + 10, w: 6, h: 20 });
+                } else {
+                    bullets.push({ x: player.x + 10, y: player.y + 15, w: 6, h: 20 });
+                    bullets.push({ x: player.x + player.w / 2 - 3, y: player.y, w: 6, h: 20 });
+                    bullets.push({ x: player.x + player.w - 16, y: player.y + 15, w: 6, h: 20 });
+                }
+                player.lastFire = now;
+            }
+
+            // Bullets logic
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= BULLET_SPEED;
+                if (bullets[i].y < -20) bullets.splice(i, 1);
+            }
+
+            // Enemies logic
+            if (frameCount % Math.max(15, Math.floor(60 / (0.5 + wave * 0.2))) === 0) {
+                spawnEnemy();
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                if (e.type === 'CHASER') {
+                    const dx = (player.x + player.w / 2) - (e.x + e.w / 2);
+                    e.x += (dx / 120) * (e.speed);
+                }
+                e.y += e.speed;
+
+                // Collision with bullets
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const b = bullets[j];
+                    if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+                        e.hp--;
+                        bullets.splice(j, 1);
+                        if (e.hp <= 0) {
+                            createExplosion(e.x + e.w / 2, e.y + e.h / 2, '#bc13fe');
+                            spawnPowerup(e.x + e.w / 2, e.y + e.h / 2);
+                            enemies.splice(i, 1);
+                            score += 150;
+                            updateUI();
+                            break;
+                        }
+                    }
+                }
+
+                // Collision with player
+                if (e.x < player.x + player.w * 0.8 && e.x + e.w > player.x + player.w * 0.2 &&
+                    e.y < player.y + player.h * 0.8 && e.y + e.h > player.y + player.h * 0.2) {
+                    player.hp -= 20;
+                    enemies.splice(i, 1);
+                    createExplosion(player.x + player.w / 2, player.y + player.h / 2, '#ff3b3b');
+                    updateUI();
+                    if (player.hp <= 0) endGame();
+                }
+
+                if (e.y > canvas.height) enemies.splice(i, 1);
+            }
+
+            // Powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.y += 2.5;
+                if (p.x < player.x + player.w && p.x + p.w > player.x && p.y < player.y + player.h && p.y + p.h > player.y) {
+                    applyPowerup(p.type);
+                    powerups.splice(i, 1);
+                    score += 500;
+                    updateUI();
+                }
+                if (p.y > canvas.height) powerups.splice(i, 1);
+            }
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            // Wave increase
+            if (score > wave * wave * 2500) {
+                wave++;
+                updateUI();
+            }
+        }
+
+        function applyPowerup(type) {
+            if (type === 'HP') {
+                player.hp = Math.min(player.maxHp, player.hp + 40);
+                showTag('tag-shield');
+            } else if (type === 'MULTI') {
+                player.multiShot = Math.min(3, player.multiShot + 1);
+                showTag('tag-multishot');
+            } else if (type === 'SPEED') {
+                player.fireDelay = Math.max(120, player.fireDelay - 40);
+                player.speedBonus = Math.min(6, player.speedBonus + 0.8);
+                showTag('tag-rapid');
+            }
+        }
+
+        function showTag(id) {
+            const el = document.getElementById(id);
+            el.classList.add('active');
+            setTimeout(() => el.classList.remove('active'), 4000);
+        }
+
+        function updateUI() {
+            document.getElementById('score-val').textContent = String(score).padStart(5, '0');
+            document.getElementById('wave-val').textContent = wave;
+            const hpPercent = (player.hp / player.maxHp) * 100;
+            document.getElementById('health-bar').style.width = Math.max(0, hpPercent) + '%';
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('final-score-val').textContent = score;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Procedural Starfield
+            ctx.fillStyle = 'white';
+            for (let i = 0; i < 70; i++) {
+                const x = (Math.sin(frameCount * 0.005 + i * 10) * 500) + 450;
+                const y = (Math.cos(frameCount * 0.008 + i * 20) * 350) + 300;
+                ctx.globalAlpha = Math.random() * 0.4 + 0.2;
+                ctx.fillRect(x, y, 1.5, 1.5);
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw Player
+            if (playerShipImg.complete && playerShipImg.naturalWidth !== 0) {
+                ctx.save();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = varColor('--neon-blue');
+                ctx.drawImage(playerShipImg, player.x, player.y, player.w, player.h);
+                ctx.restore();
+            } else {
+                // Fallback drawing
+                ctx.fillStyle = varColor('--neon-blue');
+                ctx.fillRect(player.x, player.y, player.w, player.h);
+            }
+
+            // Draw Bullets
+            ctx.fillStyle = varColor('--neon-blue');
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = varColor('--neon-blue');
+            bullets.forEach(b => {
+                ctx.fillRect(b.x, b.y, b.w, b.h);
+            });
+
+            // Draw Enemies
+            enemies.forEach(e => {
+                ctx.shadowBlur = 15;
+                const color = e.type === 'CHASER' ? '#ff3b3b' : '#bc13fe';
+                ctx.fillStyle = color;
+                ctx.shadowColor = color;
+                ctx.fillRect(e.x, e.y, e.w, e.h);
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(e.x + 8, e.y + 8, e.w - 16, e.h - 16);
+            });
+
+            // Draw Powerups
+            powerups.forEach(p => {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'white';
+                if (p.type === 'HP') ctx.fillStyle = '#00ff00';
+                else if (p.type === 'MULTI') ctx.fillStyle = '#ffff00';
+                else ctx.fillStyle = '#00f3ff';
+
+                ctx.beginPath();
+                ctx.arc(p.x + p.w / 2, p.y + p.h / 2, p.w / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.stroke();
+            });
+
+            // Draw Particles
+            ctx.shadowBlur = 0;
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+            ctx.globalAlpha = 1.0;
+
+            function varColor(name) {
+                return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            }
+
+            requestAnimationFrame(() => {
+                update();
+                draw();
+            });
+        }
+
+        draw();
+    </script>
+
+</body>
+
+</html>

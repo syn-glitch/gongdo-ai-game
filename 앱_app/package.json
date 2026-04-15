@@ -1,0 +1,20 @@
+{
+  "name": "gongdo-ai-game",
+  "version": "0.4.0",
+  "private": true,
+  "description": "공도 AI-Game — TRACK 01 바이브코딩 실습환경 (S04 단계)",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev --listen 3000",
+    "start": "vercel dev --listen 3000",
+    "serve:static": "npx serve . -l 3000"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@supabase/supabase-js": "^2.103.0",
+    "@vercel/kv": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

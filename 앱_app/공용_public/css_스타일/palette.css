@@ -1,0 +1,71 @@
+/*
+ * 공도 AI-Game — 브랜드 팔레트 CSS 변수
+ * 기반: 디자인_design/브랜드_brand/palette.md v0.1.0
+ * 최AR 검증 후 값 미세조정 시 이 파일만 수정하면 전체 반영
+ */
+:root {
+  /* ㅋㅋ 캐릭터 기반 8색 (WCAG AA/AAA 검증) */
+  --color-red:    #E63946;  /* 메인 액션 · CTA · [시작] */
+  --color-yellow: #F7C548;  /* 하이라이트 · 성공 · 로딩 */
+  --color-green:  #8FA957;  /* 보조 액션 · 완료 · 진행률 */
+  --color-blue:   #3D7BA3;  /* 정보 · 링크 · 포커스 아웃라인 */
+  --color-brown:  #5B3A22;  /* 텍스트 · 아웃라인 */
+  --color-black:  #1A1A1A;  /* 카툰 심볼 아웃라인 */
+  --color-cream:  #FFF8EC;  /* 전체 배경 · 카드 바탕 */
+  --color-pink:   #F48FA0;  /* 서브 강조 */
+
+  /* 파생 */
+  --color-red-dark:   #C62E39;
+  --color-red-light:  #F06571;
+  --color-brown-soft: #8A6849;
+  --color-cream-deep: #F5EDD6;
+
+  /* 그레이 스케일 (보조) */
+  --color-gray-50:  #FAF6EC;
+  --color-gray-100: #EFE8D6;
+  --color-gray-300: #C9C0AC;
+  --color-gray-500: #8A8676;
+
+  /* 카툰 스타일 변수 */
+  --outline-width: 3px;
+  --outline-color: var(--color-black);
+  --radius-sm:  8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-toon:       4px 4px 0 var(--color-black);
+  --shadow-toon-hover: 6px 6px 0 var(--color-black);
+  --shadow-toon-sm:    2px 2px 0 var(--color-black);
+
+  /* 타이포그래피 */
+  --font-body: 'Nanum Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-code: 'D2Coding', 'Menlo', 'Consolas', monospace;
+
+  --fs-xs:  12px;
+  --fs-sm:  14px;
+  --fs-md:  16px;
+  --fs-lg:  18px;
+  --fs-xl:  22px;
+  --fs-2xl: 28px;
+  --fs-3xl: 36px;
+
+  /* 스페이싱 */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 레이아웃 */
+  --header-h:    60px;
+  --footer-h:    28px;
+  --tutor-h:    200px;
+  --tutor-h-expanded: 40vh;
+
+  /* 모션 */
+  --ease:    cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-mid:  250ms;
+  --dur-slow: 400ms;
+}

@@ -1,0 +1,33 @@
+# 환경 변수 (절대 커밋 금지)
+.env
+.env.local
+.env.*.local
+**/.env.local
+
+# 의존성
+node_modules/
+**/node_modules/
+
+# Vercel
+.vercel/
+**/.vercel/
+
+# 빌드 결과
+.next/
+dist/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# 로그
+*.log
+npm-debug.log*
+
+# 임시 파일
+*.tmp
+*.bak

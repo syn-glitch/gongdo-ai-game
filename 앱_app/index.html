@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <title>공도 AI-Game — 바이브코딩 실습환경</title>
+  <meta name="description" content="초등 5~6학년을 위한 AI 게임 만들기 실습환경">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=D2Coding&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./공용_public/css_스타일/reset.css">
+  <link rel="stylesheet" href="./공용_public/css_스타일/palette.css">
+  <link rel="stylesheet" href="./공용_public/css_스타일/layout.css">
+  <link rel="stylesheet" href="./공용_public/css_스타일/components.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+
+  <header class="app-header" role="banner">
+    <h1 class="app-title">
+      <span class="logo-mark" aria-hidden="true">🎮</span>
+      공도 AI-Game
+    </h1>
+    <nav class="header-actions" aria-label="주요 작업">
+      <button type="button" class="btn btn-ghost" id="btn-help" aria-label="도움말">
+        <span aria-hidden="true">❓</span> 도움말
+      </button>
+      <button type="button" class="btn btn-primary" id="btn-start" aria-label="게임 만들기 시작">
+        <span aria-hidden="true">▶</span> 시작<span class="btn-music-badge" id="start-music-badge" hidden>🎵</span>
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-present" aria-label="발표자료 만들기">
+        <span aria-hidden="true">📤</span> 발표자료
+      </button>
+      <button type="button" class="btn btn-secondary" id="btn-save" aria-label="내 작품 저장">
+        <span aria-hidden="true">💾</span> 저장
+      </button>
+    </nav>
+  </header>
+
+  <main id="main-content" class="app-main" role="main">
+
+    <aside class="pane pane-drawer" aria-label="차시 폴더 목록" id="pane-drawer">
+      <h2 class="pane-title">📚 수업 폴더</h2>
+      <nav aria-label="차시 네비게이션">
+        <ul class="drawer-tree" id="drawer-lessons" role="tree" aria-label="수업 차시 폴더"></ul>
+        <hr class="drawer-divider">
+        <h3 class="drawer-section-title">🎨 내 작품</h3>
+        <ul class="drawer-tree" id="drawer-myworks" role="tree" aria-label="내 작품 폴더"></ul>
+      </nav>
+    </aside>
+
+    <section class="pane pane-editor" aria-label="바이브코딩 문서 에디터" id="pane-editor" style="flex: 1 1 auto; min-width: 420px;">
+      <div class="pane-toolbar pane-toolbar-stacked">
+        <div class="pane-toolbar-row pane-toolbar-row-1">
+          <h2 class="pane-title">📝 바이브코딩 문서</h2>
+          <span class="pane-hint">차시를 골라서 문서를 열어보세요</span>
+        </div>
+        <div class="pane-toolbar-row pane-toolbar-row-2 editor-toolbar-actions">
+          <button type="button" class="toolbar-btn" id="btn-character" aria-label="캐릭터 넣기" aria-expanded="false" aria-controls="character-popover">
+            <span aria-hidden="true">👤</span> <span class="toolbar-btn-label">캐릭터</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="btn-theme" aria-label="배경 고르기" aria-expanded="false" aria-controls="theme-popover">
+            <span aria-hidden="true">🎨</span> <span class="toolbar-btn-label">배경</span>
+          </button>
+          <button type="button" class="toolbar-btn" id="btn-bgm" aria-label="배경음악 열기" aria-expanded="false" aria-controls="bgm-popover">
+            <span aria-hidden="true">🎵</span> <span class="toolbar-btn-label" id="btn-bgm-label">음악</span>
+          </button>
+        </div>
+
+        <div id="character-popover" class="character-popover" hidden role="dialog" aria-label="넷마블 캐릭터 고르기">
+          <div class="character-popover-head">
+            <h3 class="character-popover-title">🎭 주인공을 골라볼까요?</h3>
+            <button type="button" class="drawer-close character-popover-close" id="character-popover-close" aria-label="닫기">✕</button>
+          </div>
+          <ul class="character-grid" id="character-grid">
+            <li>
+              <button type="button" class="character-card" data-char="kk" data-label="ㅋㅋ" data-file="kk_idle.png">
+                <span class="character-emoji" aria-hidden="true">🦸</span>
+                <span class="character-name">ㅋㅋ</span>
+                <span class="character-desc">용감 장난꾸러기</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="character-card" data-char="tory" data-label="토리" data-file="tory_idle.png">
+                <span class="character-emoji" aria-hidden="true">👒</span>
+                <span class="character-name">토리</span>
+                <span class="character-desc">똑똑 다정</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="character-card" data-char="bob" data-label="밥" data-file="bob_idle.png">
+                <span class="character-emoji" aria-hidden="true">🐰</span>
+                <span class="character-name">밥</span>
+                <span class="character-desc">느긋 푸근</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="character-card" data-char="leon" data-label="레옹" data-file="leon_idle.png">
+                <span class="character-emoji" aria-hidden="true">🦁</span>
+                <span class="character-name">레옹</span>
+                <span class="character-desc">용맹 든든</span>
+              </button>
+            </li>
+          </ul>
+          <p class="character-popover-footnote">
+            * 지금은 이모지 임시 · 최종본에는 실제 캐릭터 이미지가 등장해요
+          </p>
+        </div>
+
+        <div id="theme-popover" class="character-popover theme-popover" hidden role="dialog" aria-label="배경 테마 고르기">
+          <div class="character-popover-head">
+            <h3 class="character-popover-title">🎨 어떤 배경으로 해볼까요?</h3>
+            <button type="button" class="drawer-close character-popover-close" id="theme-popover-close" aria-label="닫기">✕</button>
+          </div>
+          <ul class="theme-grid" id="theme-grid">
+            <li>
+              <button type="button" class="theme-card" data-theme="space"
+                      data-label="우주" data-desc="별이 가득한 까만 밤하늘"
+                      data-colors="#0a0e27,#1a1f4d,#4a5198">
+                <span class="theme-emoji" aria-hidden="true">🌌</span>
+                <span class="theme-name">우주</span>
+                <span class="theme-desc">별이 가득한 밤하늘</span>
+                <span class="theme-swatch" aria-hidden="true" style="background: linear-gradient(135deg,#0a0e27,#1a1f4d,#4a5198)"></span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="theme-card" data-theme="lava"
+                      data-label="용암" data-desc="불타오르는 붉은 화산"
+                      data-colors="#3d0505,#8b1a0e,#ff6b35">
+                <span class="theme-emoji" aria-hidden="true">🌋</span>
+                <span class="theme-name">용암</span>
+                <span class="theme-desc">불타오르는 화산</span>
+                <span class="theme-swatch" aria-hidden="true" style="background: linear-gradient(135deg,#3d0505,#8b1a0e,#ff6b35)"></span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="theme-card" data-theme="forest"
+                      data-label="숲" data-desc="푸릇푸릇한 초록 숲속"
+                      data-colors="#1a3a1a,#2d5f2d,#7fc47f">
+                <span class="theme-emoji" aria-hidden="true">🌳</span>
+                <span class="theme-name">숲</span>
+                <span class="theme-desc">푸릇푸릇한 초록 숲속</span>
+                <span class="theme-swatch" aria-hidden="true" style="background: linear-gradient(135deg,#1a3a1a,#2d5f2d,#7fc47f)"></span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="theme-card" data-theme="ocean"
+                      data-label="바다" data-desc="파도치는 푸른 바닷속"
+                      data-colors="#003366,#0077b6,#90e0ef">
+                <span class="theme-emoji" aria-hidden="true">🌊</span>
+                <span class="theme-name">바다</span>
+                <span class="theme-desc">파도치는 바닷속</span>
+                <span class="theme-swatch" aria-hidden="true" style="background: linear-gradient(135deg,#003366,#0077b6,#90e0ef)"></span>
+              </button>
+            </li>
+          </ul>
+          <p class="character-popover-footnote">
+            * 배경을 바꾸면 게임 분위기가 완전히 달라져요 🎭
+          </p>
+        </div>
+
+        <div id="bgm-popover" class="character-popover bgm-popover" hidden role="dialog" aria-label="배경음악 설정">
+          <div class="character-popover-head">
+            <h3 class="character-popover-title">🎵 배경음악 만들기</h3>
+            <button type="button" class="drawer-close character-popover-close" id="bgm-popover-close" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="bgm-section">
+            <h4 class="bgm-section-title">▶ 기본 음악</h4>
+            <p class="bgm-section-desc">빠른 8-bit 우주 전투 음악이에요</p>
+            <button type="button" class="btn btn-secondary bgm-btn-play" id="btn-bgm-default">
+              <span aria-hidden="true">🎧</span> <span id="bgm-default-label">재생</span>
+            </button>
+          </div>
+
+          <hr class="bgm-divider">
+
+          <div class="bgm-section">
+            <h4 class="bgm-section-title">✨ AI가 만드는 음악</h4>
+            <p class="bgm-section-desc">어떤 느낌의 음악이 좋을까요? (예: 긴박한 우주 전투, 신나는 모험, 무서운 동굴)</p>
+            <form class="bgm-ai-form" id="bgm-ai-form" autocomplete="off">
+              <label for="bgm-ai-input" class="sr-only">AI에게 음악 주문하기</label>
+              <input type="text" id="bgm-ai-input" class="bgm-ai-input"
+                     placeholder="예: 긴박한 우주 전투"
+                     maxlength="80">
+              <button type="submit" class="btn btn-primary bgm-btn-generate" id="btn-bgm-generate">
+                <span aria-hidden="true">✨</span> 만들기
+              </button>
+            </form>
+            <p class="bgm-ai-status" id="bgm-ai-status" aria-live="polite"></p>
+
+            <div class="bgm-ai-actions" id="bgm-ai-actions" hidden>
+              <button type="button" class="btn btn-ghost bgm-action-btn" id="btn-bgm-toggle">
+                <span class="btn-bgm-toggle-icon" id="btn-bgm-toggle-icon" aria-hidden="true">⏹</span>
+                <span class="btn-bgm-toggle-label" id="btn-bgm-toggle-label">음악 정지</span>
+              </button>
+              <button type="button" class="btn btn-primary bgm-action-btn" id="btn-bgm-apply">
+                <span aria-hidden="true">✅</span> 이 음악을 내 게임에 넣기
+              </button>
+            </div>
+            <div class="bgm-apply-progress" id="bgm-apply-progress" hidden role="status" aria-live="polite">
+              <span class="bgm-apply-spinner" aria-hidden="true">🎵</span>
+              <span id="bgm-apply-text">음악을 게임에 넣는 중...</span>
+            </div>
+            <p class="bgm-applied-badge" id="bgm-applied-badge" hidden>
+              🎵 <strong id="bgm-applied-mood">—</strong> 음악이 다음 [시작] 때 게임에 들어가요!
+              <button type="button" class="bgm-applied-clear" id="bgm-applied-clear" aria-label="게임 음악 취소">✕</button>
+            </p>
+          </div>
+        </div>
+      </div>
+      <textarea
+        id="editor-textarea"
+        class="editor-textarea"
+        aria-label="바이브코딩 문서 편집기"
+        placeholder="왼쪽에서 차시를 선택하면 문서가 열려요. 문서를 수정하고 [시작]을 누르면 게임이 만들어져요!"
+        spellcheck="false"></textarea>
+    </section>
+
+    <div class="resize-handle" id="resize-handle" role="separator" aria-orientation="vertical"
+         aria-label="문서와 게임 크기 조절 바" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" tabindex="0">
+      <span class="resize-handle-grip" aria-hidden="true"></span>
+    </div>
+
+    <section class="pane pane-game" aria-label="게임 플레이 영역" id="pane-game" style="flex: 1 1 auto; min-width: 520px;">
+      <div class="pane-toolbar">
+        <h2 class="pane-title">👾 내 게임</h2>
+        <span class="pane-hint" id="game-status">[시작]을 누르면 여기서 게임이 실행돼요</span>
+      </div>
+      <div class="game-viewport" id="game-viewport">
+        <div class="game-placeholder" aria-hidden="true">
+          <div class="placeholder-emoji">🚀</div>
+          <p class="placeholder-text">게임을 기다리고 있어요</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 플로팅 AI튜터 호출 버튼 (ㅋㅋ 캐릭터) -->
+  <button
+    type="button"
+    class="tutor-fab"
+    id="tutor-fab"
+    aria-label="공도쌤 AI튜터 열기"
+    aria-controls="tutor-drawer"
+    aria-expanded="false">
+    <span class="tutor-fab-avatar" aria-hidden="true">🦸</span>
+    <span class="tutor-fab-label">AI튜터</span>
+    <span class="tutor-fab-pulse" aria-hidden="true"></span>
+  </button>
+
+  <!-- 우측 슬라이드 AI튜터 드로어 -->
+  <aside class="tutor-drawer" id="tutor-drawer" role="dialog" aria-modal="false" aria-labelledby="tutor-drawer-title" hidden>
+    <header class="drawer-head">
+      <h2 id="tutor-drawer-title" class="drawer-head-title">
+        <span class="drawer-head-avatar" aria-hidden="true">🦸</span>
+        공도쌤에게 물어보기
+      </h2>
+      <button type="button" class="drawer-close" id="tutor-close" aria-label="AI튜터 닫기">
+        <span aria-hidden="true">✕</span>
+      </button>
+    </header>
+    <div class="tutor-messages" id="tutor-messages" role="log" aria-live="polite" aria-label="튜터 대화 내용">
+      <div class="tutor-message tutor-message-bot">
+        <span class="tutor-avatar" aria-hidden="true">🦸</span>
+        <div class="tutor-bubble">
+          안녕하세요! 저는 공도쌤이에요. 🌟<br>
+          게임 만들기가 어려우면 언제든 물어봐요!
+        </div>
+      </div>
+    </div>
+    <form class="tutor-input-form" id="tutor-form" autocomplete="off">
+      <label for="tutor-input" class="sr-only">공도쌤에게 질문 입력</label>
+      <input
+        type="text"
+        id="tutor-input"
+        class="tutor-input"
+        placeholder="공도쌤에게 질문해보세요..."
+        maxlength="200">
+      <button type="submit" class="btn btn-primary tutor-send" aria-label="질문 보내기">
+        <span aria-hidden="true">📨</span>
+      </button>
+    </form>
+  </aside>
+
+  <!-- 📤 발표자료 만들기 모달 -->
+  <div id="present-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="present-title-h">
+    <div class="modal-card present-card">
+      <button type="button" class="drawer-close present-close" id="present-close" aria-label="닫기">✕</button>
+      <div class="present-head">
+        <div class="present-head-emoji" aria-hidden="true">📤</div>
+        <h2 id="present-title-h" class="modal-title">내 게임 발표자료 만들기</h2>
+        <p class="modal-desc">친구들에게 내 게임을 소개해볼까요? 🌟</p>
+      </div>
+
+      <form id="present-form" class="present-form" autocomplete="off">
+        <label class="present-field">
+          <span class="present-label">🎮 게임 제목</span>
+          <input type="text" id="present-title-input" class="present-input"
+                 placeholder="예: 토리의 지구 지키기" maxlength="40" required>
+        </label>
+        <label class="present-field">
+          <span class="present-label">✨ 한 줄 소개</span>
+          <input type="text" id="present-tagline" class="present-input"
+                 placeholder="예: 토리가 주사위 몬스터로부터 지구를 지키는 슈팅 게임!" maxlength="120">
+        </label>
+        <label class="present-field">
+          <span class="present-label">😄 가장 재밌었던 점</span>
+          <textarea id="present-highlight" class="present-textarea"
+                    placeholder="어떤 부분이 가장 재미있었나요?" maxlength="300" rows="2"></textarea>
+        </label>
+        <label class="present-field">
+          <span class="present-label">🌱 배우거나 알게 된 점</span>
+          <textarea id="present-learned" class="present-textarea"
+                    placeholder="새롭게 배운 점이나 알게 된 게 있나요?" maxlength="300" rows="2"></textarea>
+        </label>
+
+        <details class="present-auto">
+          <summary>📎 자동으로 함께 들어가는 내용</summary>
+          <ul id="present-auto-list" class="present-auto-list">
+            <li>내 바이브코딩 문서 전체</li>
+            <li>공도쌤과 나눈 대화</li>
+            <li>선택한 주인공·배경·음악</li>
+            <li>[시작] 실행 횟수와 시간</li>
+          </ul>
+        </details>
+
+        <div class="present-actions">
+          <button type="button" class="btn btn-ghost" id="present-cancel">취소</button>
+          <button type="submit" class="btn btn-primary">📥 다운로드 + 패들렛 공유</button>
+        </div>
+      </form>
+
+      <div class="present-success" id="present-success" hidden>
+        <div class="present-success-icon" aria-hidden="true">🎉</div>
+        <h3 class="present-success-title">준비 완료!</h3>
+        <ul class="present-success-list">
+          <li id="present-step-clip">📋 발표자료를 복사했어요! (Cmd+V 로 바로 붙여넣기)</li>
+          <li id="present-step-md">📥 발표자료 .md 파일 저장 (집에서 부모님께 보여주기용)</li>
+          <li id="present-step-html">🎮 게임 .html 파일 저장 (내 컴퓨터에서 나중에 열기용)</li>
+        </ul>
+        <div class="present-success-guide">
+          <p><strong>✨ 패들렛에 올리는 방법 (3단계)</strong></p>
+          <ol>
+            <li>아래 [🔗 패들렛 담벼락 열기] 클릭</li>
+            <li>담벼락에서 <strong>+</strong> 버튼 → 본문칸에 <kbd>Cmd</kbd>+<kbd>V</kbd> 붙여넣기</li>
+            <li><strong>[게시]</strong> 클릭 🎉 — 친구가 <strong>게임 주소를 누르면 바로 플레이!</strong></li>
+          </ol>
+          <p class="present-tip">
+            💡 게임은 <strong>온라인에 90일 동안 보관</strong>돼요.<br>
+            ⚠️ 파일을 첨부하지 마세요 — <strong>본문 입력칸에 Cmd+V 붙여넣기</strong>만 하세요!
+          </p>
+        </div>
+        <div class="present-actions">
+          <button type="button" class="btn btn-ghost" id="present-done">닫기</button>
+          <a href="#" target="_blank" rel="noopener" class="btn btn-primary" id="present-open-padlet">
+            🔗 패들렛 담벼락 열기
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 게임 생성 중 팝업 -->
+  <div id="generating-modal" class="modal-overlay" hidden role="status" aria-live="polite" aria-labelledby="gen-title">
+    <div class="modal-card generating-card">
+      <div class="gen-character" aria-hidden="true">🦸</div>
+      <h2 id="gen-title" class="gen-title">AI가 게임을 만들고 있어요</h2>
+      <p id="gen-message" class="gen-message">우주선에 시동을 걸어요... 🚀</p>
+      <div class="gen-progress" role="progressbar" aria-label="생성 진행률" aria-valuetext="만드는 중">
+        <div class="gen-progress-bar"></div>
+      </div>
+      <div id="gen-timer" class="gen-timer">00:00</div>
+      <button type="button" class="btn btn-ghost gen-cancel" id="gen-cancel">✕ 취소</button>
+    </div>
+  </div>
+
+  <div id="cooldown-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="cooldown-title" aria-describedby="cooldown-desc">
+    <div class="modal-card">
+      <div class="modal-emoji" aria-hidden="true">🌟</div>
+      <h2 id="cooldown-title" class="modal-title">우와, 열정 가득!</h2>
+      <p id="cooldown-desc" class="modal-desc">30초만 천천히 문서를 읽어볼까요?</p>
+      <div class="countdown-ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100" class="countdown-svg">
+          <circle class="countdown-bg" cx="50" cy="50" r="45"></circle>
+          <circle class="countdown-fg" cx="50" cy="50" r="45" id="countdown-circle"></circle>
+        </svg>
+        <span class="countdown-number" id="countdown-number" aria-live="polite" aria-atomic="true">30</span>
+      </div>
+      <p class="modal-footnote">버튼이 저절로 다시 켜져요</p>
+    </div>
+  </div>
+
+  <footer class="app-footer" role="contentinfo">
+    <small>© 2026 Netmarble Cultural Foundation. All Rights Reserved. · 공도 AI-Game v0.1 (S01)</small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/tone@15.0.4/build/Tone.js"></script>
+  <script src="./공용_public/js_스크립트/bgm.js" defer></script>
+  <script src="./공용_public/js_스크립트/app.js" defer></script>
+</body>
+</html>

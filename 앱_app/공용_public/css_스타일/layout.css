@@ -1,0 +1,397 @@
+/*
+ * 공도 AI-Game — 4-pane 레이아웃
+ * 비율: 좌 드로어 20% / 중 에디터 42% / 우 게임 38%
+ * 하단: AI튜터 200px (접기/펼치기 토글, 확장 시 좌·중만 축소, 우 플레이 고정)
+ * 1024px 미만: 탭 전환 모드
+ */
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-brown);
+  background: var(--color-cream);
+  font-size: var(--fs-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ─────── 헤더 ─────── */
+.app-header {
+  height: var(--header-h);
+  background: var(--color-cream);
+  border-bottom: var(--outline-width) solid var(--outline-color);
+  padding: 0 var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.app-title {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--color-brown);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo-mark { font-size: var(--fs-2xl); }
+
+.header-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* ─────── 메인 (Flex 3-pane + 드래그 리사이즈) ─────── */
+.app-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pane-drawer {
+  width: 20%;
+  flex-shrink: 0;
+  background: var(--color-cream-deep);
+  border-right: var(--outline-width) solid var(--outline-color);
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.pane-editor {
+  background: var(--color-cream);
+  border-right: 1px solid var(--color-brown-soft);
+  min-width: 420px;
+  container-type: inline-size;
+  container-name: editor;
+}
+
+.pane-game {
+  background: var(--color-gray-50);
+  min-width: 520px;
+}
+
+/* 드래그 리사이즈 핸들 (문서 ↔ 게임) */
+.resize-handle {
+  width: 6px;
+  flex-shrink: 0;
+  background: var(--color-brown-soft);
+  border-left: 1px solid var(--color-black);
+  border-right: 1px solid var(--color-black);
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--dur-fast) var(--ease);
+  z-index: 4;
+}
+
+.resize-handle::before {
+  /* 넓은 히트 영역 (실제 6px 바 주변 ±6px) */
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  right: -6px;
+}
+
+.resize-handle:hover,
+.resize-handle:focus-visible,
+.resize-handle.is-dragging {
+  background: var(--color-red);
+}
+
+.resize-handle-grip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-cream) 0, var(--color-cream) 4px,
+    transparent 4px, transparent 8px
+  );
+  pointer-events: none;
+}
+
+body.is-resizing {
+  cursor: col-resize !important;
+  user-select: none;
+}
+body.is-resizing iframe {
+  /* 드래그 중 iframe이 마우스 이벤트 가로채지 않게 */
+  pointer-events: none;
+}
+
+.pane-toolbar {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-brown-soft);
+  background: var(--color-cream);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+/* 2행 레이아웃 (📝 에디터 툴바) */
+.pane-toolbar-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+.pane-toolbar-stacked .pane-toolbar-row {
+  display: flex;
+  min-width: 0;
+}
+.pane-toolbar-stacked .pane-toolbar-row-1 {
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pane-toolbar-stacked .pane-toolbar-row-1 .pane-hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+.pane-toolbar-stacked .pane-toolbar-row-2 {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pane-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-brown);
+}
+
+.pane-hint {
+  font-size: var(--fs-sm);
+  color: var(--color-brown-soft);
+}
+
+/* ─────── 플로팅 AI튜터 FAB + 우측 드로어 ─────── */
+.tutor-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 76px;
+  height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--color-red);
+  border: var(--outline-width) solid var(--color-black);
+  border-radius: 50% 50% 50% 50% / 42% 42% 58% 58%;
+  color: var(--color-cream);
+  box-shadow: var(--shadow-toon);
+  cursor: pointer;
+  z-index: 50;
+  transition: transform var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease);
+}
+
+.tutor-fab:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-toon-hover);
+  background: var(--color-red-dark);
+}
+
+.tutor-fab:active {
+  transform: translate(0, 0);
+  box-shadow: var(--shadow-toon-sm);
+}
+
+.tutor-fab[aria-expanded="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6);
+  transition: all var(--dur-mid) var(--ease);
+}
+
+.tutor-fab-avatar {
+  font-size: 34px;
+  line-height: 1;
+  filter: drop-shadow(1px 1px 0 var(--color-black));
+}
+
+.tutor-fab-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0 var(--color-black);
+}
+
+.tutor-fab-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 3px solid var(--color-yellow);
+  opacity: 0;
+  animation: tutor-pulse 2.2s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tutor-pulse {
+  0%   { opacity: 0.8; transform: scale(1); }
+  80%  { opacity: 0;   transform: scale(1.25); }
+  100% { opacity: 0;   transform: scale(1.25); }
+}
+
+/* 우측 슬라이드 드로어 */
+.tutor-drawer {
+  position: fixed;
+  top: var(--header-h);
+  right: 0;
+  width: 360px;
+  height: calc(100vh - var(--header-h) - var(--footer-h));
+  background: var(--color-cream);
+  border-left: var(--outline-width) solid var(--color-black);
+  box-shadow: -6px 0 0 var(--color-black);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform var(--dur-mid) var(--ease);
+}
+
+.tutor-drawer[hidden] { display: none; }
+
+.tutor-drawer.is-open {
+  transform: translateX(0);
+}
+
+.drawer-head {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-yellow);
+  border-bottom: var(--outline-width) solid var(--color-black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.drawer-head-title {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--color-brown);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.drawer-head-avatar {
+  font-size: var(--fs-xl);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-red);
+  border: 2px solid var(--color-black);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(1px 1px 0 var(--color-black));
+}
+
+.drawer-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-cream);
+  border: 2px solid var(--color-black);
+  color: var(--color-brown);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+
+.drawer-close:hover {
+  background: var(--color-red);
+  color: var(--color-cream);
+}
+
+/* 드로어 열림 시 게임 영역 좌측 시프트 (가려짐 방지) */
+body.has-tutor-open .app-main {
+  transition: padding-right var(--dur-mid) var(--ease);
+  padding-right: 360px;
+}
+
+/* ─────── 푸터 ─────── */
+.app-footer {
+  height: var(--footer-h);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-xs);
+  flex-shrink: 0;
+  padding: 0 var(--space-4);
+}
+
+.app-footer small { opacity: 0.85; }
+
+/* ─────── 1024px 미만 탭 모드 ─────── */
+@media (max-width: 1024px) {
+  .app-main {
+    flex-direction: column;
+    position: relative;
+  }
+  .app-main .pane {
+    display: none;
+    flex: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none;
+    border-bottom: var(--outline-width) solid var(--outline-color);
+  }
+  .app-main .pane.is-active-tab {
+    display: flex;
+  }
+  .resize-handle {
+    display: none;
+  }
+  body.is-tab-mode::before {
+    content: '📚 폴더 · 📝 문서 · 👾 게임';
+    display: block;
+    padding: var(--space-2);
+    background: var(--color-yellow);
+    color: var(--color-brown);
+    text-align: center;
+    font-size: var(--fs-xs);
+    border-bottom: 2px solid var(--color-brown);
+  }
+}
+
+/* ─────── 감소된 모션 선호 ─────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
