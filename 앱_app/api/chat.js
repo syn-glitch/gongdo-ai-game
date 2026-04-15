@@ -99,7 +99,7 @@ function drawEnemy(ctx, x, y) {
 【넷마블 캐릭터 이미지 참조 — 매우 중요】
 문서에 캐릭터가 언급되면 반드시 **학생 문서에 적힌 절대 URL** 을 그대로 사용합니다. 상대 경로(/에셋_assets/...) 를 임의로 만들어 쓰지 마세요 — iframe srcdoc 에서 작동하지 않습니다.
 
-예시: 문서에 "- 주인공: ㅋㅋ (이미지: https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png)" 이라고 적혀있으면, 해당 URL 을 그대로 `<img src="https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png">` 로 사용합니다.
+예시: 문서에 "- 주인공: ㅋㅋ (이미지: https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png)" 이라고 적혀있으면, 해당 URL 을 그대로 img 태그의 src 속성에 사용합니다 (예: img src="https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png").
 
 만약 문서에 이미지 URL 이 명시되지 않았다면 이모지 폴백만 사용:
 - 토리 → 👒 / ㅋㅋ → 🦸 / 밥 → 🐰 / 레옹 → 🦁
