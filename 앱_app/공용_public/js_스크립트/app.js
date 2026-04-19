@@ -1,3 +1,28 @@
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        app.js
+ * @version     v1.1.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO
+ * @ordered-by  용남 대표
+ * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
+ *
+ * @change-summary
+ *   AS-IS: launchGame() 이 srcdoc 만 그대로 주입 → 생성 게임 HTML 의 body 가 뷰포트를 넘어 스크롤바 4방향 노출
+ *   TO-BE: iframe scrolling="no" + srcdoc 에 "html,body{overflow:hidden;...}" 안전 CSS 자동 prepend → 고정 화면
+ *
+ * @features
+ *   - [수정] launchGame() — iframe 에 scrolling="no" 부여
+ *   - [추가] injectViewportLockCss() — srcdoc 에 뷰포트 고정 CSS 1블록 안전 주입 (head 또는 문서 최상단)
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-19 | 클로이 | 게임 iframe 4방향 스크롤바 제거 (JARVIS-2026-04-19-001)
+ * v1.0.0 | (S02)      | 클로이 | 최초 작성 — 차시 manifest + 트리 렌더 + UI 토글
+ * ============================================
+ */
+
 // 공도 AI-Game — S02 상호작용 스크립트
 // 차시 manifest + 하네스 문서 fetch 로딩, "내 작품" 서브폴더 트리 렌더링
 // API 연동은 S04부터. 현재는 UI 토글·쿨다운 모달 데모.
@@ -447,6 +472,37 @@
     });
   }
 
+  // 뷰포트 고정 CSS — 어떤 게임 HTML 이 와도 4방향 스크롤바를 차단한다.
+  // 캔버스도 화면을 넘지 않도록 max-width/height 100vw/vh 강제.
+  const VIEWPORT_LOCK_CSS = `
+<style data-injected="gongdo-viewport-lock">
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas, img, svg, video {
+    max-width: 100vw;
+    max-height: 100vh;
+    display: block;
+  }
+</style>`;
+
+  function injectViewportLockCss(html) {
+    if (!html) return html;
+    if (html.includes('data-injected="gongdo-viewport-lock"')) return html;
+    if (/<head[^>]*>/i.test(html)) {
+      return html.replace(/<head([^>]*)>/i, `<head$1>${VIEWPORT_LOCK_CSS}`);
+    }
+    if (/<html[^>]*>/i.test(html)) {
+      return html.replace(/<html([^>]*)>/i, `<html$1><head>${VIEWPORT_LOCK_CSS}</head>`);
+    }
+    return VIEWPORT_LOCK_CSS + html;
+  }
+
   function launchGame(htmlOrUrl) {
     const viewport = $('#game-viewport');
     viewport.innerHTML = '';
@@ -457,10 +513,12 @@
     // 보안 정책 (M-07): allow-scripts 단일. allow-same-origin 절대 금지
     iframe.setAttribute('sandbox', 'allow-scripts');
     iframe.setAttribute('loading', 'eager');
+    // 4방향 스크롤바 차단 (legacy 속성이지만 모든 주요 브라우저에서 동작)
+    iframe.setAttribute('scrolling', 'no');
 
     // HTML 문자열이면 srcdoc, URL이면 src
     if (htmlOrUrl.startsWith('<') || htmlOrUrl.includes('<!DOCTYPE')) {
-      iframe.srcdoc = htmlOrUrl;
+      iframe.srcdoc = injectViewportLockCss(htmlOrUrl);
     } else {
       iframe.src = htmlOrUrl;
     }

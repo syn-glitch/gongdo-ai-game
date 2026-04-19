@@ -3,24 +3,23 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        chat.js
- * @version     v1.2.0
+ * @version     v1.3.0
  * @updated     2026-04-19 (KST)
- * @agent       👩‍💻 에이다 (자비스 개발팀) · 지시: 자비스 PO
+ * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO
  * @ordered-by  용남 대표
  * @description /api/chat — mode="generator" HTML 게임 생성 · mode="tutor" 학생 질문 응답.
  *              모델: claude-haiku-4-5-20251001 · Prompt Caching 적용.
  *
  * @change-summary
- *   AS-IS: v1.1 — studentId 단일 키 rate limit · prompt injection 방어 없음 · 에러에 ENV 이름 노출
- *   TO-BE: v1.2 — IP 복합 키 rate limit (S-AUTH-01) · user input XML 래핑 (S-AI-01 = S19) · 외부 script 차단 · 에러 일반화 (S-ERR-01)
+ *   AS-IS: v1.2 — 게임 캔버스가 800×600 고정이라 부모 iframe 보다 커지면 스크롤바 4방향 노출
+ *   TO-BE: v1.3 — SYSTEM_GENERATOR 에 "뷰포트 100% 고정 + 동적 캔버스 리사이즈" 강제 규칙 추가
  *
  * @features
- *   - [수정] checkAndIncrement 에 IP 전달 (S-AUTH-01)
- *   - [추가] user input 을 <student_document> 태그로 감싸 system prompt 경계 강화 (S-AI-01)
- *   - [추가] 생성 HTML post-filter — 외부 http(s) script src 차단 (S-AI-01)
- *   - [수정] 설정 오류 응답을 'configuration_error' 로 일반화 (S-ERR-01)
+ *   - [추가] SYSTEM_GENERATOR 【🔴 뷰포트 고정 규칙】 블록 — html/body overflow:hidden, 캔버스 window.innerWidth/Height 기반 리사이즈
+ *   - [수정] "반응형: 800×600 고정 캔버스" → "캔버스는 window.innerWidth/Height 기준 동적 리사이즈"
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.3.0 | 2026-04-19 | 알렉스 | 게임 뷰포트 고정 규칙 추가 (JARVIS-2026-04-19-001)
  * v1.2.0 | 2026-04-19 | 에이다 | S-AUTH-01 + S-AI-01/S19 + S-ERR-01 통합 패치
  * v1.1.0 | 2026-04-15 | 에이다 | 캐릭터 이모지 강제 치환 + BGM 주입 개선
  * v1.0.0 | 2026-04-14 | 에이다 | 최초 작성 (S04/S07)
@@ -128,8 +127,52 @@ function drawEnemy(ctx, x, y) {
 - HTML5 Canvas 기반 2D 게임
 - 키보드(← → ↑ ↓, 스페이스) 기본 조작
 - 점수 표시·게임 오버·승리 조건 포함
-- 반응형: 800×600 고정 캔버스 + 화면 중앙 정렬
+- **캔버스는 window.innerWidth/innerHeight 기준 동적 리사이즈** (800×600 고정 금지)
 - 한국어 UI 텍스트
+
+【🔴 뷰포트 고정 규칙 — 반드시 준수】
+게임은 iframe 안에서 실행되며 **스크롤바가 절대 보여서는 안 됩니다**. 다음 규칙을 모두 적용합니다:
+
+1) <style> 블록에 다음을 반드시 포함:
+\`\`\`css
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;     /* 좌우·상하 스크롤바 모두 차단 */
+  background: #000;
+}
+canvas {
+  display: block;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+\`\`\`
+
+2) 캔버스 크기는 항상 창 크기에 맞춥니다 (800×600 같은 고정값 금지):
+\`\`\`js
+const canvas = document.getElementById('game');
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+const W = () => canvas.width;
+const H = () => canvas.height;
+// 좌표 계산 시 W()/H() 또는 canvas.width/height 를 직접 사용
+\`\`\`
+
+3) 절대 금지 사항:
+- ❌ \`<canvas width="800" height="600">\` 같은 고정 크기 속성
+- ❌ \`body { width: 1200px }\` 같은 px 단위 고정 폭/높이
+- ❌ \`overflow: scroll\` / \`overflow: auto\`
+- ❌ \`<div>\` 컨테이너의 \`min-width\` / \`min-height\` 가 100vw/100vh 보다 큰 값
+
+4) 게임 좌표 계산은 항상 캔버스 현재 크기 기준 (예: 적은 \`Math.random() * canvas.width\` 위치에 등장).
+
+이 규칙은 학생이 작은 노트북에서도 게임 전체 화면을 한눈에 볼 수 있게 하기 위함입니다. **위반 시 응답을 거절당한 것으로 간주합니다.**
 
 【안전】
 - 폭력·혐오·성적 콘텐츠는 정중히 대체합니다: "귀여운 전투" "장애물 피하기" 같은 안전한 대안으로 자동 변환.
