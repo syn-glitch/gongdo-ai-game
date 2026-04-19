@@ -58,6 +58,9 @@
           <span class="pane-hint">차시를 골라서 문서를 열어보세요</span>
         </div>
         <div class="pane-toolbar-row pane-toolbar-row-2 editor-toolbar-actions">
+          <button type="button" class="toolbar-btn" id="btn-reset" aria-label="문서 처음으로 되돌리기" aria-expanded="false" aria-controls="reset-confirm-popover">
+            <span aria-hidden="true">↻</span> <span class="toolbar-btn-label">처음으로</span>
+          </button>
           <button type="button" class="toolbar-btn" id="btn-variant" aria-label="예시 게임 바꾸기" aria-expanded="false" aria-controls="variant-popover" hidden>
             <span aria-hidden="true">🎮</span> <span class="toolbar-btn-label">예시</span>
           </button>
@@ -70,6 +73,15 @@
           <button type="button" class="toolbar-btn" id="btn-bgm" aria-label="배경음악 열기" aria-expanded="false" aria-controls="bgm-popover">
             <span aria-hidden="true">🎵</span> <span class="toolbar-btn-label" id="btn-bgm-label">음악</span>
           </button>
+        </div>
+
+        <div id="reset-confirm-popover" class="character-popover reset-confirm-popover" hidden role="dialog" aria-live="polite" aria-label="문서 초기화 확인">
+          <p class="reset-confirm-title">↻ 정말 처음으로 되돌릴까요?</p>
+          <p class="reset-confirm-desc">지금까지 바꾼 내용은 사라져요!</p>
+          <div class="reset-confirm-actions">
+            <button type="button" class="btn btn-primary" id="btn-reset-yes">✓ 네, 처음으로</button>
+            <button type="button" class="btn btn-ghost" id="btn-reset-no">✗ 아니에요</button>
+          </div>
         </div>
 
         <div id="variant-popover" class="character-popover variant-popover" hidden role="dialog" aria-label="예시 게임 바꾸기">

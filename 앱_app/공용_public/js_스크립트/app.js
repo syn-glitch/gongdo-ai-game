@@ -3,24 +3,24 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.4.0
+ * @version     v1.5.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-001 위임)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-002 위임 / PRD v1.1)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: 차시당 단일 lesson.md 만 로드 → 1차시는 우주 슈팅 한 가지 예시뿐
- *   TO-BE: manifest.json variants 배열 지원 → 1차시 [예시] 토글로 우주 슈팅/별 받기/점프 회피 선택
+ *   AS-IS: 학생이 문서 마구 수정 후 복구 수단 부재 → 안전망 부족
+ *   TO-BE: [↻ 처음으로] 도구바 버튼 + 인라인 confirm popover (5초 절대 timeout) + cache miss fetch fallback
  *
  * @features
- *   - [추가] state.currentVariantKey + loadLessonFile(file) — 파일 경로 기준 캐싱
- *   - [추가] renderVariantPanel(lessonMeta) — variants ≥2 인 차시에서 #btn-variant 노출 + 카드 렌더
- *   - [추가] initVariantPanel() — popover 토글 + 카드 클릭 시 변형 markdown 로드 + attention 표시
- *   - [수정] selectLesson() — variants 있으면 첫 번째를 기본으로 로드, 토글 표시
- *   - 하위 호환: variants 없는 차시(2~5)는 기존대로 lesson.file 단일 사용
+ *   - [추가] resetCurrentLesson() — 현재 차시+variant 의 원본 markdown 으로 복원 (cache miss 시 fetch fallback)
+ *   - [추가] initResetPanel() — [↻] 버튼 클릭 시 confirm popover, 재클릭 시 timer reset (AC-Edge-4)
+ *   - [추가] index.html: #btn-reset 도구바 버튼 + #reset-confirm-popover (`.character-popover` 통합)
+ *   - 거절 (PRD §9.4): hover timer reset X / flashEditor X (송PO 의도된 단순화 준수)
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.5.0 | 2026-04-19 | 클로이 | 문서 [↻ 처음으로] 초기화 버튼 (BUNKER-2026-04-19-002, PRD v1.1)
  * v1.4.0 | 2026-04-19 | 클로이 | 차시 변형(variants) 선택 UI (BUNKER-2026-04-19-001 → JARVIS UI 통합)
  * v1.3.0 | 2026-04-19 | 클로이 | 자동 재생성 롤백 + 시작 버튼 attention 액션 (JARVIS-2026-04-19-002 R2)
  * v1.2.0 | 2026-04-19 | 클로이 | (롤백됨) 캐릭터/배경/BGM 변경 시 자동 [시작]
@@ -962,6 +962,95 @@
     });
   }
 
+  // ─────────── 문서 [↻ 처음으로] 초기화 (BUNKER-2026-04-19-002, PRD v1.1) ───────────
+  // FR-1~16 + AC-Edge-1~5 준수. setupPopover 미사용 (AC-Edge-4 재클릭 timer reset 위해 수동).
+  async function resetCurrentLesson() {
+    const lesson = state.manifest?.lessons?.find((l) => l.no === state.currentLesson);
+    if (!lesson) return;
+    const variant = lesson.variants?.find((v) => v.key === state.currentVariantKey);
+    const file = variant?.file || lesson.file;
+    try {
+      // FR-7 + FR-16: cache hit → 즉시 / cache miss → fetch fallback
+      if (!state.lessonCache.has(file)) {
+        const res = await fetch(`./차시_lessons/${file}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('fetch 실패');
+        state.lessonCache.set(file, await res.text());
+      }
+      $('#editor-textarea').value = state.lessonCache.get(file);
+      $('#game-status').textContent = '📜 처음 예시로 되돌렸어요!';
+      clearStartButtonAttention();
+    } catch (err) {
+      console.error('[reset]', err);
+      $('#game-status').textContent = '⚠️ 처음 예시를 불러오지 못했어요. 다시 시도해볼래요?';
+    }
+  }
+
+  function initResetPanel() {
+    const btn      = $('#btn-reset');
+    const popover  = $('#reset-confirm-popover');
+    const yesBtn   = $('#btn-reset-yes');
+    const noBtn    = $('#btn-reset-no');
+    if (!btn || !popover || !yesBtn || !noBtn) return;
+
+    let autoCloseTimer = null;
+    const startTimer = () => {
+      if (autoCloseTimer) clearTimeout(autoCloseTimer);
+      autoCloseTimer = setTimeout(close, 5000); // FR-13: 5초 절대 시간 (hover 무관)
+    };
+    function close() {
+      popover.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
+    }
+    function open() {
+      // AC-Edge-1: 다른 popover 자동 닫기
+      $$('.character-popover').forEach((p) => {
+        if (p !== popover) {
+          p.hidden = true;
+          const opener = document.querySelector(`[aria-controls="${p.id}"]`);
+          if (opener) opener.setAttribute('aria-expanded', 'false');
+        }
+      });
+      popover.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      startTimer();
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // FR-7 보조: 차시 미선택 시 안내
+      if (!state.currentLesson) {
+        $('#game-status').textContent = '먼저 차시를 골라주세요!';
+        return;
+      }
+      if (popover.hidden) {
+        open();
+      } else {
+        // AC-Edge-4: 재클릭 시 토글 X — timer 만 reset
+        startTimer();
+      }
+    });
+    yesBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      close();
+      await resetCurrentLesson();
+    });
+    noBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      close();
+    });
+    // FR-12 + AC-Edge-2/3: 외부 클릭 (차시 트리·[시작] 등) 시 자동 닫힘
+    document.addEventListener('click', (e) => {
+      if (popover.hidden) return;
+      if (popover.contains(e.target)) return;
+      if (e.target === btn || btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !popover.hidden) close();
+    });
+  }
+
   // ─────────── 캐릭터 패널 (S10) ───────────
   function initCharacterPanel() {
     const p = setupPopover({ btnId: 'btn-character', popoverId: 'character-popover', closeId: 'character-popover-close' });
@@ -1453,6 +1542,7 @@
     initGenCancel();
     initResizeHandle();
     initVariantPanel();
+    initResetPanel();
     initCharacterPanel();
     initThemePanel();
     initBgmPanel();

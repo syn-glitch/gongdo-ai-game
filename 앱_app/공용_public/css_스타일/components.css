@@ -589,6 +589,34 @@
 /* ─────── 배경 테마 팝오버 ─────── */
 .theme-popover { width: 420px; }
 
+/* ─────── 문서 [↻ 처음으로] 초기화 confirm (BUNKER-2026-04-19-002 / app.js v1.5.0) ─────── */
+.reset-confirm-popover {
+  min-width: 280px;
+  max-width: 360px;
+}
+.reset-confirm-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  color: var(--color-brown);
+}
+.reset-confirm-desc {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--color-brown-soft);
+  font-weight: 600;
+}
+.reset-confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.reset-confirm-actions .btn {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+}
+
 /* ─────── 예시 게임 변형 팝오버 (BUNKER-2026-04-19-001 / app.js v1.4.0) ─────── */
 .variant-grid {
   display: grid;
