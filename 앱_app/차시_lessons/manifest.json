@@ -1,6 +1,6 @@
 {
-  "version": "v0.1.0",
-  "updated": "2026-04-14",
+  "version": "v0.2.0",
+  "updated": "2026-04-19",
   "lessons": [
     {
       "no": 1,
@@ -9,7 +9,12 @@
       "file": "lesson1.md",
       "subtitle": "AI에게 게임을 만들어달라고 부탁해요",
       "duration_min": 40,
-      "goal": "AI에게 문장으로 말해 게임을 만드는 경험"
+      "goal": "AI에게 문장으로 말해 게임을 만드는 경험",
+      "variants": [
+        { "key": "space",  "label": "🚀 우주 슈팅", "file": "lesson1.md",       "desc": "외계인을 미사일로 쏴요" },
+        { "key": "catch",  "label": "🌟 별 받기",   "file": "lesson1_catch.md", "desc": "떨어지는 별을 좌우로 받아요" },
+        { "key": "jump",   "label": "🐰 점프 회피", "file": "lesson1_jump.md",  "desc": "장애물을 점프로 피해요" }
+      ]
     },
     {
       "no": 2,
