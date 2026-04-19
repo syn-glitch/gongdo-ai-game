@@ -1,5 +1,5 @@
 {
-  "version": "v0.2.0",
+  "version": "v0.3.0",
   "updated": "2026-04-19",
   "lessons": [
     {
@@ -42,22 +42,12 @@
       "subtitle": "내 게임을 친구들에게 소개해요",
       "duration_min": 40,
       "goal": "작품 소개글 · 프롬프트 히스토리 정리"
-    },
-    {
-      "no": 5,
-      "title": "AI 게임 공유회",
-      "emoji": "🎉",
-      "file": "lesson5.md",
-      "subtitle": "친구들의 게임을 함께 플레이해요",
-      "duration_min": 40,
-      "goal": "동료 학습 · 피드백 나누기"
     }
   ],
   "myworks_folders": [
     { "lesson": 1, "label": "1차시 작품" },
     { "lesson": 2, "label": "2차시 작품" },
     { "lesson": 3, "label": "3차시 작품" },
-    { "lesson": 4, "label": "4차시 작품" },
-    { "lesson": 5, "label": "5차시 작품" }
+    { "lesson": 4, "label": "4차시 작품" }
   ]
 }
