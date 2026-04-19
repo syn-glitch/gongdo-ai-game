@@ -3,23 +3,25 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.3.0
+ * @version     v1.4.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (대표 직접 지시)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-001 위임)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: v1.2 자동 재생성 → 학생이 문서 보지 않고 캐릭터 버튼만 연타 → 교육 취지 훼손
- *   TO-BE: 자동 재생성 롤백 + [시작] 버튼 attention 액션(펄스+빨간점) → 학생이 직접 [시작] 누르도록 시선 유도
+ *   AS-IS: 차시당 단일 lesson.md 만 로드 → 1차시는 우주 슈팅 한 가지 예시뿐
+ *   TO-BE: manifest.json variants 배열 지원 → 1차시 [예시] 토글로 우주 슈팅/별 받기/점프 회피 선택
  *
  * @features
- *   - [삭제] scheduleAutoStart 헬퍼 + window.GongdoApp.scheduleAutoStart export (교육 취지 위배)
- *   - [추가] highlightStartButton(reason) — [시작] 버튼에 attention 클래스 + 빨간 점 뱃지 표시
- *   - [추가] handleStartClick 진입 시 attention 해제 (학생이 본인 손으로 누름 → 안내 종료)
- *   - [복원] 토스트 문구 "[시작]을 눌러봐요!" 유지
+ *   - [추가] state.currentVariantKey + loadLessonFile(file) — 파일 경로 기준 캐싱
+ *   - [추가] renderVariantPanel(lessonMeta) — variants ≥2 인 차시에서 #btn-variant 노출 + 카드 렌더
+ *   - [추가] initVariantPanel() — popover 토글 + 카드 클릭 시 변형 markdown 로드 + attention 표시
+ *   - [수정] selectLesson() — variants 있으면 첫 번째를 기본으로 로드, 토글 표시
+ *   - 하위 호환: variants 없는 차시(2~5)는 기존대로 lesson.file 단일 사용
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.4.0 | 2026-04-19 | 클로이 | 차시 변형(variants) 선택 UI (BUNKER-2026-04-19-001 → JARVIS UI 통합)
  * v1.3.0 | 2026-04-19 | 클로이 | 자동 재생성 롤백 + 시작 버튼 attention 액션 (JARVIS-2026-04-19-002 R2)
  * v1.2.0 | 2026-04-19 | 클로이 | (롤백됨) 캐릭터/배경/BGM 변경 시 자동 [시작]
  * v1.1.0 | 2026-04-19 | 클로이 | 게임 iframe 4방향 스크롤바 제거 (JARVIS-2026-04-19-001)
@@ -40,6 +42,7 @@
   const state = {
     manifest: null,
     currentLesson: null,
+    currentVariantKey: null,
     currentWork: null,
     myWorks: [],
     lessonCache: new Map(),
@@ -219,13 +222,14 @@
       const lessonMeta = state.manifest.lessons.find((l) => l.no === Number(lessonNo));
       if (!lessonMeta) throw new Error('차시 정보 없음');
 
-      if (!state.lessonCache.has(lessonNo)) {
-        const res = await fetch(`./차시_lessons/${lessonMeta.file}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('문서 로딩 실패');
-        const text = await res.text();
-        state.lessonCache.set(lessonNo, text);
-      }
-      editor.value = state.lessonCache.get(lessonNo);
+      // variants 가 있으면 첫 번째 변형을 기본으로, 없으면 lesson.file 사용
+      const variants = Array.isArray(lessonMeta.variants) ? lessonMeta.variants : [];
+      const defaultVariant = variants[0] || null;
+      const fileToLoad = defaultVariant ? defaultVariant.file : lessonMeta.file;
+      state.currentVariantKey = defaultVariant ? defaultVariant.key : null;
+
+      await loadLessonFile(fileToLoad);
+      renderVariantPanel(lessonMeta);
       editor.focus();
       $('#game-status').textContent =
         `${lessonNo}차시 문서가 열렸어요. 수정한 뒤 [시작]을 눌러봐요!`;
@@ -233,6 +237,17 @@
       console.error(err);
       editor.value = `(문서를 불러오지 못했어요 — ${err.message})`;
     }
+  }
+
+  // 파일 경로 기준 캐시 — variants 까지 안전 처리 (BUNKER-2026-04-19-001 + JARVIS UI)
+  async function loadLessonFile(file) {
+    const editor = $('#editor-textarea');
+    if (!state.lessonCache.has(file)) {
+      const res = await fetch(`./차시_lessons/${file}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('문서 로딩 실패');
+      state.lessonCache.set(file, await res.text());
+    }
+    editor.value = state.lessonCache.get(file);
   }
 
   function loadWork(work) {
@@ -886,6 +901,67 @@
     return { toggle, popover, btn };
   }
 
+  // ─────────── 예시 게임 변형 패널 (BUNKER-2026-04-19-001) ───────────
+  function renderVariantPanel(lessonMeta) {
+    const btn  = $('#btn-variant');
+    const grid = $('#variant-grid');
+    if (!btn || !grid) return;
+    const variants = Array.isArray(lessonMeta?.variants) ? lessonMeta.variants : [];
+    if (variants.length < 2) {
+      btn.hidden = true;
+      grid.innerHTML = '';
+      return;
+    }
+    btn.hidden = false;
+    grid.innerHTML = '';
+    variants.forEach((v) => {
+      const isActive = v.key === state.currentVariantKey;
+      const li = document.createElement('li');
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'variant-card' + (isActive ? ' is-active' : '');
+      card.dataset.variantKey  = v.key;
+      card.dataset.variantFile = v.file;
+      card.innerHTML = `
+        <span class="variant-label">${v.label || v.key}</span>
+        <span class="variant-desc">${v.desc || ''}</span>
+      `;
+      li.appendChild(card);
+      grid.appendChild(li);
+    });
+  }
+
+  function initVariantPanel() {
+    const p = setupPopover({ btnId: 'btn-variant', popoverId: 'variant-popover', closeId: 'variant-popover-close' });
+    if (!p) return;
+    // 그리드는 매번 동적으로 채우므로 이벤트는 위임으로 처리
+    const grid = $('#variant-grid');
+    if (!grid) return;
+    grid.addEventListener('click', async (e) => {
+      const card = e.target.closest('.variant-card');
+      if (!card) return;
+      const file = card.dataset.variantFile;
+      const key  = card.dataset.variantKey;
+      if (!file || !state.currentLesson) return;
+      if (key === state.currentVariantKey) { p.toggle(false); return; }
+      try {
+        await loadLessonFile(file);
+        state.currentVariantKey = key;
+        // 카드 active 상태 갱신
+        $$('#variant-grid .variant-card').forEach((c) => c.classList.remove('is-active'));
+        card.classList.add('is-active');
+        const label = card.querySelector('.variant-label')?.textContent || '';
+        $('#game-status').textContent = `✨ 예시를 '${label.trim()}'(으)로 바꿨어요! 문서를 읽고 [시작]을 눌러봐요!`;
+        highlightStartButton('variant');
+      } catch (err) {
+        console.error(err);
+        $('#game-status').textContent = '⚠️ 예시를 불러오지 못했어요. 다시 시도해볼래요?';
+      } finally {
+        p.toggle(false);
+      }
+    });
+  }
+
   // ─────────── 캐릭터 패널 (S10) ───────────
   function initCharacterPanel() {
     const p = setupPopover({ btnId: 'btn-character', popoverId: 'character-popover', closeId: 'character-popover-close' });
@@ -1376,6 +1452,7 @@
     initTutor();
     initGenCancel();
     initResizeHandle();
+    initVariantPanel();
     initCharacterPanel();
     initThemePanel();
     initBgmPanel();

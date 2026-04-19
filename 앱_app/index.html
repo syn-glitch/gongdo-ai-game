@@ -58,6 +58,9 @@
           <span class="pane-hint">차시를 골라서 문서를 열어보세요</span>
         </div>
         <div class="pane-toolbar-row pane-toolbar-row-2 editor-toolbar-actions">
+          <button type="button" class="toolbar-btn" id="btn-variant" aria-label="예시 게임 바꾸기" aria-expanded="false" aria-controls="variant-popover" hidden>
+            <span aria-hidden="true">🎮</span> <span class="toolbar-btn-label">예시</span>
+          </button>
           <button type="button" class="toolbar-btn" id="btn-character" aria-label="캐릭터 넣기" aria-expanded="false" aria-controls="character-popover">
             <span aria-hidden="true">👤</span> <span class="toolbar-btn-label">캐릭터</span>
           </button>
@@ -67,6 +70,17 @@
           <button type="button" class="toolbar-btn" id="btn-bgm" aria-label="배경음악 열기" aria-expanded="false" aria-controls="bgm-popover">
             <span aria-hidden="true">🎵</span> <span class="toolbar-btn-label" id="btn-bgm-label">음악</span>
           </button>
+        </div>
+
+        <div id="variant-popover" class="character-popover variant-popover" hidden role="dialog" aria-label="예시 게임 바꾸기">
+          <div class="character-popover-head">
+            <h3 class="character-popover-title">🎮 어떤 게임을 만들어볼까요?</h3>
+            <button type="button" class="drawer-close character-popover-close" id="variant-popover-close" aria-label="닫기">✕</button>
+          </div>
+          <ul class="variant-grid" id="variant-grid"></ul>
+          <p class="character-popover-footnote">
+            * 예시를 바꾸면 문서가 새로 열려요. 변경한 내용은 사라지니 조심!
+          </p>
         </div>
 
         <div id="character-popover" class="character-popover" hidden role="dialog" aria-label="넷마블 캐릭터 고르기">
