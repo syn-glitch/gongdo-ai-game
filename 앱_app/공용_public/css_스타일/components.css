@@ -726,6 +726,24 @@
   border-color: var(--color-black);
 }
 
+/* v1.8.1: 코드 영역 안 inline 안내 (학생 시선 가까이 + 3초 자동 사라짐) */
+.code-view-info {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-brown);
+  background: var(--color-yellow);
+  border-bottom: 2px solid var(--color-black);
+  animation: codeInfoFade 0.2s ease-in;
+}
+.code-view-info[hidden] { display: none; }
+.code-view-info[data-kind="fail"] { background: #ffe5b4; }
+@keyframes codeInfoFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* v1.8: 전체 보기 토글 (코드 헤더) */
 .code-view-show-all {
   margin-left: auto;

@@ -3,25 +3,23 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.8.0
+ * @version     v1.8.1
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (김감사 QA-006 반영)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: v1.7 분할 뷰 = 마크다운 전체 + 코드 전체 동시 노출 (능동 탐색 X)
- *   TO-BE: v1.8 마크다운 ### 헤딩 옆 [🔍 코드] 버튼 → 해당 섹션 코드 하이라이트 + 자동 스크롤
+ *   AS-IS: v1.8.0 Fallback 시 이전 하이라이트 잔존 (MAJOR-1) + 토스트 위치 page top 시선 멀음 (MINOR-3)
+ *   TO-BE: v1.8.1 Fallback 시 showFullCode() 호출 + 코드 영역 안 inline #code-view-info 배너 (3초 자동 fade)
  *
  * @features
- *   - [추가] renderMarkdownLite() ### 헤딩에 .md-section-btn 인라인 버튼 삽입 (data-section)
- *   - [추가] findSectionKeywords() / findCodeRange() — 학생 주석 인용 정규식 매핑 + Fallback
- *   - [추가] renderCodeLines() — 코드 라인별 wrap (.code-line / .code-line.is-highlight)
- *   - [추가] highlightCodeSection(section) — 매칭 → 하이라이트 + scrollIntoView + [📜 전체] 토글
- *   - [추가] showFullCode() — 하이라이트 해제, 전체 보기 복귀
- *   - [수정] x-c 주석 스타일 강화 (배경 yellow tint + 좌측 border) — 코드 ↔ 주석 시각 구분
+ *   - [수정] highlightCodeSection() Fallback 분기에서 showFullCode() 호출 (MAJOR-1 fix)
+ *   - [추가] showCodeViewInfo(text) / hideCodeViewInfo() — 코드 영역 안 인라인 안내 (3초 자동 사라짐, MINOR-3)
+ *   - [수정] 매칭 성공/실패 토스트 → 코드 영역 inline info banner 로 이전 (game-status 도 유지)
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.8.1 | 2026-04-19 | 클로이 | Fallback 잔존 fix + 코드 영역 inline info (QA-006 MAJOR-1, MINOR-3)
  * v1.8.0 | 2026-04-19 | 클로이 | 항목별 [🔍 코드] 버튼 + 부분 하이라이트 (PRD 생략 Fast-Track)
  * v1.7.0 | 2026-04-19 | 클로이 | 분할 뷰 + tokenize root-cause fix (BUNKER-2026-04-19-004, PRD v1.1)
  * v1.6.0 | 2026-04-19 | 클로이 | [🔍 코드 구경] 오버레이 + 변경 감지 (BUNKER-2026-04-19-003, PRD v1.1)
@@ -1080,6 +1078,23 @@
   }
 
   let currentHighlightSection = null;
+  let codeViewInfoTimer = null;
+
+  // v1.8.1 MINOR-3: 코드 영역 안 inline 안내 (학생 시선 가까이 + 3초 자동 사라짐)
+  function showCodeViewInfo(text, kind) {
+    const info = $('#code-view-info');
+    if (!info) return;
+    info.textContent = text;
+    info.dataset.kind = kind || 'success';   // success | fail
+    info.hidden = false;
+    if (codeViewInfoTimer) clearTimeout(codeViewInfoTimer);
+    codeViewInfoTimer = setTimeout(() => { info.hidden = true; codeViewInfoTimer = null; }, 3000);
+  }
+  function hideCodeViewInfo() {
+    const info = $('#code-view-info');
+    if (info) info.hidden = true;
+    if (codeViewInfoTimer) { clearTimeout(codeViewInfoTimer); codeViewInfoTimer = null; }
+  }
 
   function highlightCodeSection(sectionTitle) {
     if (!state.lastGeneratedHtml) return;
@@ -1088,14 +1103,19 @@
     const keywords = findSectionKeywords(mdSource, sectionTitle);
     const range = findCodeRange(state.lastGeneratedHtml, keywords);
     if (!range) {
-      // Fallback — 매칭 실패 안내, 전체 보기 유지
-      $('#game-status').textContent = `🔎 '${sectionTitle}' 부분과 딱 맞는 코드를 못 찾았어요. 전체 코드에서 직접 찾아볼래요?`;
+      // QA-006 MAJOR-1 fix: Fallback 시 이전 하이라이트 클리어 (학생 혼란 회피)
+      showFullCode();
+      const msg = `🔎 '${sectionTitle}' 부분과 딱 맞는 코드를 못 찾았어요. 전체 코드에서 찾아볼래요?`;
+      $('#game-status').textContent = msg;
+      showCodeViewInfo(msg, 'fail');
       return;
     }
     currentHighlightSection = sectionTitle;
     $('#code-view-content').innerHTML = renderCodeLines(state.lastGeneratedHtml, range);
     $('#btn-code-show-all').hidden = false;
-    $('#game-status').textContent = `🔍 '${sectionTitle}' 부분 코드를 찾았어요!`;
+    const okMsg = `🔍 '${sectionTitle}' 부분 코드를 찾았어요!`;
+    $('#game-status').textContent = okMsg;
+    showCodeViewInfo(okMsg, 'success');
     // 부드러운 자동 스크롤
     requestAnimationFrame(() => {
       const firstHL = document.querySelector('#code-view-content .code-line.is-highlight');
@@ -1106,6 +1126,7 @@
     currentHighlightSection = null;
     $('#code-view-content').innerHTML = renderCodeLines(state.lastGeneratedHtml, null);
     $('#btn-code-show-all').hidden = true;
+    hideCodeViewInfo();
   }
 
   function updateCodeView() {
@@ -1143,6 +1164,7 @@
     currentHighlightSection = null;
     content.innerHTML = renderCodeLines(state.lastGeneratedHtml, null);
     if ($('#btn-code-show-all')) $('#btn-code-show-all').hidden = true;
+    hideCodeViewInfo();   // v1.8.1: 이전 안내 클리어
 
     // FR-11 변경 감지 배지 (snapshot 있을 때만 비교 의미 있음)
     warn.hidden  = !(snap && editor && editor.value !== snap.sourceText);
