@@ -3,23 +3,27 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.5.0
+ * @version     v1.6.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-002 위임 / PRD v1.1)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-003 위임 / PRD v1.1)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: 학생이 문서 마구 수정 후 복구 수단 부재 → 안전망 부족
- *   TO-BE: [↻ 처음으로] 도구바 버튼 + 인라인 confirm popover (5초 절대 timeout) + cache miss fetch fallback
+ *   AS-IS: 학생이 자연어 → 코드 매핑 시각화 부재 → 학습 깊이 부족
+ *   TO-BE: [🔍 코드 구경] 오버레이 + chat.js v1.4 학생 학습용 주석 + snapshot 변경 감지
  *
  * @features
- *   - [추가] resetCurrentLesson() — 현재 차시+variant 의 원본 markdown 으로 복원 (cache miss 시 fetch fallback)
- *   - [추가] initResetPanel() — [↻] 버튼 클릭 시 confirm popover, 재클릭 시 timer reset (AC-Edge-4)
- *   - [추가] index.html: #btn-reset 도구바 버튼 + #reset-confirm-popover (`.character-popover` 통합)
- *   - 거절 (PRD §9.4): hover timer reset X / flashEditor X (송PO 의도된 단순화 준수)
+ *   - [추가] state.lastGeneratedHtmlSnapshot = { html, sourceText } — 문서 변경 감지 (FR-19)
+ *   - [추가] handleStartClick 끝에서 snapshot 갱신
+ *   - [추가] openCodeView / closeCodeView / updateCodeView — 오버레이 토글, 변경 안내 배지
+ *   - [추가] tokenize() — CSS 정규식 기반 가벼운 syntax highlighting (외부 라이브러리 X)
+ *   - [추가] initCodeViewPanel() — 1·2·3차시에서만 [🔍 코드 구경] 노출 (FR-3)
+ *   - [수정] selectLesson() — 차시 변경 시 [🔍 코드 구경] 버튼 표시/숨김 (1·2·3차시만)
+ *   - 거절 (PRD §9.4): 코드 직접 수정 X / hover 매핑 X / 별도 LLM 호출 X / 외부 라이브러리 X
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.6.0 | 2026-04-19 | 클로이 | [🔍 코드 구경] 오버레이 + 변경 감지 (BUNKER-2026-04-19-003, PRD v1.1)
  * v1.5.0 | 2026-04-19 | 클로이 | 문서 [↻ 처음으로] 초기화 버튼 (BUNKER-2026-04-19-002, PRD v1.1)
  * v1.4.0 | 2026-04-19 | 클로이 | 차시 변형(variants) 선택 UI (BUNKER-2026-04-19-001 → JARVIS UI 통합)
  * v1.3.0 | 2026-04-19 | 클로이 | 자동 재생성 롤백 + 시작 버튼 attention 액션 (JARVIS-2026-04-19-002 R2)
@@ -48,6 +52,7 @@
     lessonCache: new Map(),
     studentId: getOrCreateStudentId(),
     lastGeneratedHtml: null,
+    lastGeneratedHtmlSnapshot: null,  // { html, sourceText } — BUNKER-003 FR-19
     isGenerating: false,
     abortController: null,
     promptHistory: [],  // {at, lessonNo, document}
@@ -230,6 +235,7 @@
 
       await loadLessonFile(fileToLoad);
       renderVariantPanel(lessonMeta);
+      refreshCodeViewBtnVisibility();   // BUNKER-003 FR-3: 1·2·3차시만 노출
       editor.focus();
       $('#game-status').textContent =
         `${lessonNo}차시 문서가 열렸어요. 수정한 뒤 [시작]을 눌러봐요!`;
@@ -319,6 +325,8 @@
       }
 
       state.lastGeneratedHtml = data.html;
+      // BUNKER-003 FR-19: 변경 감지용 snapshot
+      state.lastGeneratedHtmlSnapshot = { html: data.html, sourceText: editor.value };
       state.promptHistory.push({
         at: new Date().toISOString(),
         lessonNo: state.currentLesson,
@@ -962,6 +970,110 @@
     });
   }
 
+  // ─────────── [🔍 코드 구경] 오버레이 (BUNKER-2026-04-19-003, PRD v1.1) ───────────
+  // 학생이 자연어 → 코드 매핑을 시각적으로 확인. read-only 뷰어.
+  // 자율 금지 (PRD §9.4): 코드 직접 수정 X / hover 매핑 X / 별도 LLM 호출 X / 외부 라이브러리 X.
+  const CODE_VIEW_LESSONS = new Set([1, 2, 3]); // FR-3: 1·2·3차시만 노출
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // FR-6 + §9.2 색상 토큰: comment / keyword
+  // 주의: HTML+JS 혼합 코드에서 정규식만으로 JS 문자열과 HTML 속성값을 구분 불가 →
+  // string 색칠은 의도적으로 제외 (송PO §9.4 자율 금지 = 외부 라이브러리 X 와 일관).
+  function tokenizeCode(rawCode) {
+    let html = escapeHtml(rawCode);
+    // 1) HTML comments <!-- ... -->
+    html = html.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="code-tag-comment">$1</span>');
+    // 2) JS line comments // ...
+    html = html.replace(/(\/\/[^\n]*)/g, '<span class="code-tag-comment">$1</span>');
+    // 3) 키워드
+    html = html.replace(/\b(function|const|let|var|if|else|return|new|for|while|class|this|null|true|false)\b/g, '<span class="code-tag-keyword">$1</span>');
+    return html;
+  }
+
+  function updateCodeView() {
+    const overlay  = $('#code-view-overlay');
+    const content  = $('#code-view-content');
+    const warn     = $('#code-view-warn');
+    if (!overlay || !content || !warn) return;
+
+    // FR-11: 게임 미생성 시 안내
+    if (!state.lastGeneratedHtml) {
+      content.innerHTML = ''
+        + '<div class="code-view-empty">'
+        + '<div class="code-view-empty-emoji">🎮</div>'
+        + '<p>먼저 [▶ 시작]을 눌러 게임을 만들어요!</p>'
+        + '<p>그러면 진짜 코드를 구경할 수 있어요.</p>'
+        + '</div>';
+      warn.hidden = true;
+      return;
+    }
+    // FR-12/13: 변경 감지 → 노란 안내 배지
+    const editor = $('#editor-textarea');
+    const snap   = state.lastGeneratedHtmlSnapshot;
+    const stale  = !!snap && editor && editor.value !== snap.sourceText;
+    warn.hidden = !stale;
+    // FR-6: syntax highlight 적용해 표시 (FR-14: 학생용 주석 없는 구버전이어도 그대로 표시)
+    content.innerHTML = tokenizeCode(state.lastGeneratedHtml);
+  }
+
+  function openCodeView() {
+    const overlay = $('#code-view-overlay');
+    const btn     = $('#btn-code-view');
+    if (!overlay || !btn) return;
+    // AC-Edge-1: 다른 popover 자동 닫기
+    $$('.character-popover').forEach((p) => {
+      p.hidden = true;
+      const opener = document.querySelector(`[aria-controls="${p.id}"]`);
+      if (opener) opener.setAttribute('aria-expanded', 'false');
+    });
+    updateCodeView();
+    overlay.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function closeCodeView() {
+    const overlay = $('#code-view-overlay');
+    const btn     = $('#btn-code-view');
+    if (overlay) overlay.hidden = true;
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function refreshCodeViewBtnVisibility() {
+    const btn = $('#btn-code-view');
+    if (!btn) return;
+    btn.hidden = !CODE_VIEW_LESSONS.has(Number(state.currentLesson));
+  }
+
+  function initCodeViewPanel() {
+    const btn      = $('#btn-code-view');
+    const overlay  = $('#code-view-overlay');
+    const closeBtn = $('#btn-code-view-close');
+    if (!btn || !overlay || !closeBtn) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // AC-Edge-4: 토글 (재클릭 시 닫기)
+      if (overlay.hidden) openCodeView(); else closeCodeView();
+    });
+    closeBtn.addEventListener('click', closeCodeView);
+    // FR-8c: 외부 클릭 닫힘 (오버레이 자체 클릭 시는 닫히지 않게 — 헤더/본문 모두 overlay 자식)
+    document.addEventListener('click', (e) => {
+      if (overlay.hidden) return;
+      if (overlay.contains(e.target)) return;
+      if (e.target === btn || btn.contains(e.target)) return;
+      closeCodeView();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.hidden) closeCodeView();
+    });
+  }
+
   // ─────────── 문서 [↻ 처음으로] 초기화 (BUNKER-2026-04-19-002, PRD v1.1) ───────────
   // FR-1~16 + AC-Edge-1~5 준수. setupPopover 미사용 (AC-Edge-4 재클릭 timer reset 위해 수동).
   async function resetCurrentLesson() {
@@ -1543,6 +1655,7 @@
     initResizeHandle();
     initVariantPanel();
     initResetPanel();
+    initCodeViewPanel();
     initCharacterPanel();
     initThemePanel();
     initBgmPanel();

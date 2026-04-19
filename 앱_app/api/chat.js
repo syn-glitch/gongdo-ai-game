@@ -3,22 +3,23 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        chat.js
- * @version     v1.3.0
+ * @version     v1.4.0
  * @updated     2026-04-19 (KST)
- * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO
+ * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-003 위임)
  * @ordered-by  용남 대표
  * @description /api/chat — mode="generator" HTML 게임 생성 · mode="tutor" 학생 질문 응답.
  *              모델: claude-haiku-4-5-20251001 · Prompt Caching 적용.
  *
  * @change-summary
- *   AS-IS: v1.2 — 게임 캔버스가 800×600 고정이라 부모 iframe 보다 커지면 스크롤바 4방향 노출
- *   TO-BE: v1.3 — SYSTEM_GENERATOR 에 "뷰포트 100% 고정 + 동적 캔버스 리사이즈" 강제 규칙 추가
+ *   AS-IS: v1.3 — 게임 코드만 생성, 자연어 ↔ 코드 매핑 학습 자료 0
+ *   TO-BE: v1.4 — 【🎓 학생 학습용 주석】 블록 추가 (// 📝 "...") + max_tokens 4000→5000 (BUNKER PRD §FR-15~18)
  *
  * @features
- *   - [추가] SYSTEM_GENERATOR 【🔴 뷰포트 고정 규칙】 블록 — html/body overflow:hidden, 캔버스 window.innerWidth/Height 기반 리사이즈
- *   - [수정] "반응형: 800×600 고정 캔버스" → "캔버스는 window.innerWidth/Height 기준 동적 리사이즈"
+ *   - [추가] SYSTEM_GENERATOR 【🎓 학생 학습용 주석】 — 코드에 5~10개 친화 주석 자동 포함
+ *   - [수정] generator max_tokens 4000 → 5000 (NFR-5, 주석 토큰 여유분)
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.4.0 | 2026-04-19 | 알렉스 | 학생 학습용 주석 + max_tokens 상향 (BUNKER-2026-04-19-003)
  * v1.3.0 | 2026-04-19 | 알렉스 | 게임 뷰포트 고정 규칙 추가 (JARVIS-2026-04-19-001)
  * v1.2.0 | 2026-04-19 | 에이다 | S-AUTH-01 + S-AI-01/S19 + S-ERR-01 통합 패치
  * v1.1.0 | 2026-04-15 | 에이다 | 캐릭터 이모지 강제 치환 + BGM 주입 개선
@@ -221,7 +222,52 @@ function drawPlayer(ctx, x, y, size) {
 
 【결론】
 - 단순 도형(사각형·원)으로 캐릭터를 그리지 않습니다. 반드시 이모지(케이스 A) 또는 이미지+이모지 폴백(케이스 B).
-- 게임의 재미는 AI 생성의 가장 중요한 가치이므로, 캐릭터 없이 무채색 사각형이 움직이는 게임은 실패로 간주합니다.`;
+- 게임의 재미는 AI 생성의 가장 중요한 가치이므로, 캐릭터 없이 무채색 사각형이 움직이는 게임은 실패로 간주합니다.
+
+【🎓 학생 학습용 주석 — 필수】
+학생이 [코드 구경] 버튼으로 코드를 구경할 때, "내가 한국어로 쓴 문장이 어떻게 코드가 됐을까?" 를 알 수 있도록, 코드 안에 친화적 주석을 5~10개 포함합니다.
+
+■ 주석 형식 (반드시 준수)
+\`\`\`
+// 📝 "[학생 문서에서 인용한 한 줄]" → [초등 5~6학년이 이해할 1~2문장 설명]
+\`\`\`
+
+■ 주석 위치 (5~10개 권장)
+- 주요 함수 정의 위 (drawPlayer, update, gameLoop, collide 등)
+- 게임 핵심 변수·상수 위 (player, enemies, score, hp 등)
+- 키보드 입력 처리 위 (addEventListener('keydown', ...))
+- 충돌·점수·게임오버 로직 위
+- (HTML 안에서는 \`<!-- 📝 "..." → ... -->\` 사용 가능)
+
+■ 어휘 규칙 (IT 용어 금지 — 어린 학생이 헷갈림)
+- "변수" ❌ → "기억하는 칸" ✅
+- "함수" ❌ → "묶음" ✅ 또는 "그리는 부분" 같이 동작 묘사
+- "조건문" ❌ → "만약에" ✅
+- "루프"·"반복문" ❌ → "계속 ~해요" ✅
+- "메서드"·"클래스"·"인스턴스"·"콜백" ❌ → 풀어서 설명
+- 학생 문서의 정확한 표현을 그대로 인용 (예: "주인공: ㅋㅋ" → "주인공: ㅋㅋ")
+
+■ 좋은 예시
+\`\`\`js
+// 📝 "주인공: ㅋㅋ" → 너의 주인공 ㅋㅋ를 화면에 그리는 묶음이야!
+function drawPlayer(ctx, x, y) {
+  ctx.fillText('🦸', x, y);
+}
+
+// 📝 "← → 키: 좌우로 움직이기" → 키보드 화살표를 누르면
+//    주인공이 옆으로 움직여요.
+document.addEventListener('keydown', (e) => { ... });
+
+// 📝 "적과 부딪히면 HP가 1칸 깎여요"
+//    → 만약에 주인공과 적이 붙으면, HP를 1만큼 줄여요.
+if (overlap(player, enemy)) hp -= 1;
+\`\`\`
+
+■ 절대 금지
+- 주석을 하나도 안 쓰는 것 ❌ (최소 5개)
+- IT 용어 사용 ❌ (어휘 규칙 위반)
+- 학생 문서에 없는 내용 인용 ❌ (가짜 인용 금지)
+- 주석이 게임 동작을 바꾸는 것 ❌ (// 또는 <!-- --> 만 사용, 코드 로직 무관)`;
 
 const SYSTEM_TUTOR = `당신은 대한민국 초등 5~6학년 학생에게 "바이브코딩 문서 작성"을 도와주는 친절한 AI 선생님 "공도쌤"입니다.
 
@@ -472,7 +518,7 @@ export default async function handler(req, res) {
   try {
     const msg = await client.messages.create({
       model: MODEL,
-      max_tokens: mode === 'tutor' ? 600 : 4000,
+      max_tokens: mode === 'tutor' ? 600 : 5000,
       system: [
         { type: 'text', text: systemText, cache_control: { type: 'ephemeral' } },
       ],

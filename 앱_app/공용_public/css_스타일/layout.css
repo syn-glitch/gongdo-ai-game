@@ -79,6 +79,7 @@ body {
   min-width: 420px;
   container-type: inline-size;
   container-name: editor;
+  position: relative;  /* BUNKER-003: #code-view-overlay absolute 기준점 */
 }
 
 .pane-game {

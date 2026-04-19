@@ -589,6 +589,102 @@
 /* ─────── 배경 테마 팝오버 ─────── */
 .theme-popover { width: 420px; }
 
+/* ─────── [🔍 코드 구경] 오버레이 (BUNKER-2026-04-19-003 / app.js v1.6.0) ─────── */
+.code-view-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-cream, #fff8e7);
+  border: 2px solid var(--color-black);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  box-shadow: var(--shadow-toon);
+  overflow: hidden;
+}
+.code-view-overlay[hidden] { display: none; }
+
+.code-view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-yellow);
+  border-bottom: 2px solid var(--color-black);
+  flex: 0 0 auto;
+}
+.code-view-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--color-brown);
+}
+.code-view-readonly-note {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-brown-soft);
+}
+.code-view-close {
+  /* AC-NFR-7: 모바일 ✕ 44×44 */
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--color-black);
+  border-radius: 50%;
+  background: var(--color-cream-deep);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--color-brown);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.code-view-close:hover { background: var(--color-red); color: var(--color-cream); }
+
+.code-view-warn {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-yellow);
+  border-bottom: 2px solid var(--color-black);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-brown);
+}
+.code-view-warn[hidden] { display: none; }
+
+.code-view-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  background: var(--color-cream-deep);
+}
+.code-view-pre {
+  margin: 0;
+  padding: var(--space-3);
+  font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-brown);
+  white-space: pre;
+  /* FR-7: 텍스트 선택·복사 OK */
+  user-select: text;
+}
+.code-view-pre code { font: inherit; color: inherit; }
+
+.code-view-empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-brown);
+  font-weight: 700;
+}
+.code-view-empty-emoji { font-size: 64px; line-height: 1; margin-bottom: var(--space-3); }
+
+/* §9.2 색상 토큰 — 송PO 결정 (자비스 자율 X) */
+.code-tag-comment { color: var(--color-brown-soft); font-style: italic; }
+.code-tag-keyword { color: var(--color-brown); font-weight: 800; }
+.code-tag-string  { color: #2d5f2d; }
+
 /* ─────── 문서 [↻ 처음으로] 초기화 confirm (BUNKER-2026-04-19-002 / app.js v1.5.0) ─────── */
 .reset-confirm-popover {
   min-width: 280px;
