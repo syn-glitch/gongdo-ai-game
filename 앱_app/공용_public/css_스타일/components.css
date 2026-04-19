@@ -489,6 +489,36 @@
   50%      { box-shadow: 0 0 0 8px var(--color-yellow), var(--shadow-toon); transform: translate(-3px, -3px); }
 }
 
+/* [시작] 버튼 attention 액션 — 캐릭터/배경/BGM 변경 시 학생 시선 유도 (JARVIS-2026-04-19-002 R2) */
+/* 학생이 [시작] 누를 때까지 무한 펄스 (자동 재생성 X — 학생이 직접 눌러야 학습 효과) */
+.btn-attention {
+  animation: btn-attention-pulse 1.4s ease-in-out infinite;
+  position: relative;
+}
+@keyframes btn-attention-pulse {
+  0%, 100% { box-shadow: var(--shadow-toon-sm); }
+  50%      { box-shadow: 0 0 0 6px rgba(247, 197, 72, 0.55), var(--shadow-toon); }
+}
+
+/* 빨간 점 뱃지 — "변경사항 있음" 신호 */
+.btn-attention-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-red, #e74c3c);
+  border: 1.5px solid var(--color-black);
+  margin-left: 6px;
+  vertical-align: top;
+  animation: btn-attention-dot-pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6);
+}
+.btn-attention-dot[hidden] { display: none; }
+@keyframes btn-attention-dot-pulse {
+  0%, 100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6); }
+  50%      { transform: scale(1.25); box-shadow: 0 0 0 5px rgba(231, 76, 60, 0); }
+}
+
 /* AI 음악 토글 버튼 — 재생 중일 때 빨강 */
 .bgm-action-btn.is-playing {
   background: var(--color-red);

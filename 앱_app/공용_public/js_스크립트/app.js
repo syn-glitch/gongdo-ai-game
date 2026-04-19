@@ -3,23 +3,25 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.2.0
+ * @version     v1.3.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (김감사 위임)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (대표 직접 지시)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: 캐릭터/배경 변경 시 토스트만 표시 → 학생이 [시작] 직접 클릭 필요 → 인지 불일치(QA-002)
- *   TO-BE: window.GongdoApp.scheduleAutoStart() — debounce 800ms 후 자동 재생성. gate=lastGeneratedHtml 존재 시
+ *   AS-IS: v1.2 자동 재생성 → 학생이 문서 보지 않고 캐릭터 버튼만 연타 → 교육 취지 훼손
+ *   TO-BE: 자동 재생성 롤백 + [시작] 버튼 attention 액션(펄스+빨간점) → 학생이 직접 [시작] 누르도록 시선 유도
  *
  * @features
- *   - [추가] window.GongdoApp.scheduleAutoStart(reason) — debounce + gate + isGenerating 회피
- *   - [수정] insertCharacterIntoDoc / insertThemeIntoDoc — 끝에 자동 트리거 호출 + 토스트 문구 갱신
- *   - [추가] bgm.js 에서 호출 가능하도록 window.GongdoApp 네임스페이스 export
+ *   - [삭제] scheduleAutoStart 헬퍼 + window.GongdoApp.scheduleAutoStart export (교육 취지 위배)
+ *   - [추가] highlightStartButton(reason) — [시작] 버튼에 attention 클래스 + 빨간 점 뱃지 표시
+ *   - [추가] handleStartClick 진입 시 attention 해제 (학생이 본인 손으로 누름 → 안내 종료)
+ *   - [복원] 토스트 문구 "[시작]을 눌러봐요!" 유지
  *
  * ── 변경 이력 ──────────────────────────
- * v1.2.0 | 2026-04-19 | 클로이 | 캐릭터/배경/BGM 변경 시 자동 [시작] (JARVIS-2026-04-19-002)
+ * v1.3.0 | 2026-04-19 | 클로이 | 자동 재생성 롤백 + 시작 버튼 attention 액션 (JARVIS-2026-04-19-002 R2)
+ * v1.2.0 | 2026-04-19 | 클로이 | (롤백됨) 캐릭터/배경/BGM 변경 시 자동 [시작]
  * v1.1.0 | 2026-04-19 | 클로이 | 게임 iframe 4방향 스크롤바 제거 (JARVIS-2026-04-19-001)
  * v1.0.0 | (S02)      | 클로이 | 최초 작성 — 차시 manifest + 트리 렌더 + UI 토글
  * ============================================
@@ -258,6 +260,9 @@
       return;
     }
 
+    // 학생이 [시작]을 직접 눌렀음 → attention 안내 종료
+    clearStartButtonAttention();
+
     if (state.abortController) state.abortController.abort();
     state.abortController = new AbortController();
 
@@ -328,25 +333,23 @@
     }
   }
 
-  // ─────────── 자동 [시작] 트리거 (JARVIS-2026-04-19-002) ───────────
-  // 캐릭터/배경/BGM 변경 시 학생 인지와 동일하게 즉시 새 게임 생성.
-  // gate: 첫 게임은 학생이 직접 [시작] 누르도록 (state.lastGeneratedHtml 존재 시에만 자동).
-  // debounce: 800ms — 캐릭터+배경 연속 변경을 1회로 합쳐 rate limit 보호.
-  let autoStartTimer = null;
-  function scheduleAutoStart(reason) {
-    if (autoStartTimer) {
-      clearTimeout(autoStartTimer);
-      autoStartTimer = null;
-    }
-    if (!state.lastGeneratedHtml) return;          // 첫 게임은 학생이 직접
-    if (state.isGenerating) return;                // 이미 생성 중이면 skip
-    if (!state.currentLesson) return;
-    autoStartTimer = setTimeout(() => {
-      autoStartTimer = null;
-      if (state.isGenerating) return;              // 타이머 만료 시점 재확인
-      if (!state.lastGeneratedHtml) return;
-      handleStartClick();
-    }, 800);
+  // ─────────── [시작] 버튼 attention 액션 (JARVIS-2026-04-19-002 R2) ───────────
+  // 캐릭터/배경/BGM 변경 시 학생의 시선을 우측 상단 [시작] 버튼으로 유도.
+  // 자동 재생성 X (학생이 문서를 직접 보고 본인 손으로 [시작] 눌러야 학습 효과).
+  // attention 클래스 = 부드러운 무한 펄스, 빨간 점 뱃지 = 변경사항 있음 표시.
+  function highlightStartButton(reason) {
+    const btn = $('#btn-start');
+    if (!btn) return;
+    btn.classList.add('btn-attention');
+    const dot = $('#start-attention-dot');
+    if (dot) dot.hidden = false;
+  }
+  function clearStartButtonAttention() {
+    const btn = $('#btn-start');
+    if (!btn) return;
+    btn.classList.remove('btn-attention');
+    const dot = $('#start-attention-dot');
+    if (dot) dot.hidden = true;
   }
 
   // ─────────── AI 생성 중 팝업 ───────────
@@ -945,11 +948,9 @@
     flashEditor();
 
     const lineNumber = nextValue.slice(0, insertStart).split('\n').length;
-    const willAutoStart = !!state.lastGeneratedHtml && !state.isGenerating;
-    $('#game-status').textContent = willAutoStart
-      ? `🎨 배경을 '${label}'(으)로 바꿨어요! 🌟 새 게임을 만들고 있어요...`
-      : `🎨 배경을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
-    scheduleAutoStart('theme');
+    $('#game-status').textContent =
+      `🎨 배경을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    highlightStartButton('theme');
   }
 
   function insertCharacterIntoDoc(label, file) {
@@ -987,11 +988,9 @@
 
     // 줄 번호 계산 (1-based)
     const lineNumber = nextValue.slice(0, insertStart).split('\n').length;
-    const willAutoStart = !!state.lastGeneratedHtml && !state.isGenerating;
-    $('#game-status').textContent = willAutoStart
-      ? `🎉 주인공을 '${label}'(으)로 바꿨어요! 🌟 새 게임을 만들고 있어요...`
-      : `🎉 주인공을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
-    scheduleAutoStart('character');
+    $('#game-status').textContent =
+      `🎉 주인공을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    highlightStartButton('character');
   }
 
   function scrollEditorToPosition(textarea, pos) {
@@ -1386,8 +1385,9 @@
     console.log('[공도 AI-Game] S10 (emoji 임시) 캐릭터 패널 로드 완료');
   });
 
-  // bgm.js 등 외부 모듈에서 자동 [시작] 트리거 (JARVIS-2026-04-19-002)
+  // bgm.js 등 외부 모듈에서 [시작] 버튼 attention 표시 (JARVIS-2026-04-19-002 R2)
   window.GongdoApp = Object.assign(window.GongdoApp || {}, {
-    scheduleAutoStart,
+    highlightStartButton,
+    clearStartButtonAttention,
   });
 })();
