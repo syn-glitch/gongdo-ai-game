@@ -1,3 +1,28 @@
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        bgm.js
+ * @version     v1.1.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (김감사 위임)
+ * @ordered-by  용남 대표
+ * @description 공도 AI-Game 배경음악 — S13 기본 8-bit + S14 Claude AI 동적 악보 + 게임 적용 플로우.
+ *
+ * @change-summary
+ *   AS-IS: 음악 적용 후 "[시작]을 눌러봐요!" 안내만 → 학생이 [시작] 직접 클릭 필요
+ *   TO-BE: 적용 직후 window.GongdoApp.scheduleAutoStart('bgm') 호출 → 자동 새 게임 생성 (debounce 800ms)
+ *
+ * @features
+ *   - [추가] applyToGameWithFeedback() 끝에 자동 재생성 hook
+ *   - [수정] 적용 완료 토스트 — "[시작] 눌러봐요" → "곧 새 게임이 만들어져요"
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-19 | 클로이 | BGM 적용 시 자동 [시작] (JARVIS-2026-04-19-002)
+ * v1.0.0 | (S13~S15)  | 클로이 | 최초 작성 — 8-bit BGM + AI 악보 + .wav 추출
+ * ============================================
+ */
+
 // 공도 AI-Game — S13 + S14 배경음악
 // S13: 기본 8-bit 하드코딩 BGM
 // S14: /api/music Claude JSON 악보 → Tone.js 동적 재생
@@ -251,19 +276,27 @@
       progressEl.style.background = 'var(--color-green)';
       progressEl.style.color = 'var(--color-cream)';
     }
+    // 자동 재생성 가능 여부 (게임이 한 번 이상 만들어진 상태에서만 자동)
+    const willAutoStart = !!(window.GongdoApp && document.querySelector('.game-iframe'));
+
     if (statusEl) {
       statusEl.className = 'bgm-ai-status is-success';
-      statusEl.textContent = `🎉 이제 [▶ 시작] 버튼을 눌러봐요! '${state.lastGeneratedMood}' 음악과 함께 게임이 나와요.`;
+      statusEl.textContent = willAutoStart
+        ? `🎉 '${state.lastGeneratedMood}' 음악으로 새 게임을 만들고 있어요... 🌟`
+        : `🎉 이제 [▶ 시작] 버튼을 눌러봐요! '${state.lastGeneratedMood}' 음악과 함께 게임이 나와요.`;
     }
 
-    // [시작] 버튼 깜빡 하이라이트 (3번)
+    // [시작] 버튼 깜빡 하이라이트 (자동 재생성 시 생략)
     const startBtn = document.getElementById('btn-start');
-    if (startBtn) {
+    if (startBtn && !willAutoStart) {
       startBtn.classList.remove('btn-highlight-pulse');
       void startBtn.offsetWidth;
       startBtn.classList.add('btn-highlight-pulse');
       setTimeout(() => startBtn.classList.remove('btn-highlight-pulse'), 1800);
     }
+
+    // 자동 새 게임 생성 (JARVIS-2026-04-19-002)
+    try { window.GongdoApp?.scheduleAutoStart?.('bgm'); } catch {}
 
     setTimeout(() => {
       if (progressEl) {

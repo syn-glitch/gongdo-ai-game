@@ -3,21 +3,23 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.1.0
+ * @version     v1.2.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (김감사 위임)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: launchGame() 이 srcdoc 만 그대로 주입 → 생성 게임 HTML 의 body 가 뷰포트를 넘어 스크롤바 4방향 노출
- *   TO-BE: iframe scrolling="no" + srcdoc 에 "html,body{overflow:hidden;...}" 안전 CSS 자동 prepend → 고정 화면
+ *   AS-IS: 캐릭터/배경 변경 시 토스트만 표시 → 학생이 [시작] 직접 클릭 필요 → 인지 불일치(QA-002)
+ *   TO-BE: window.GongdoApp.scheduleAutoStart() — debounce 800ms 후 자동 재생성. gate=lastGeneratedHtml 존재 시
  *
  * @features
- *   - [수정] launchGame() — iframe 에 scrolling="no" 부여
- *   - [추가] injectViewportLockCss() — srcdoc 에 뷰포트 고정 CSS 1블록 안전 주입 (head 또는 문서 최상단)
+ *   - [추가] window.GongdoApp.scheduleAutoStart(reason) — debounce + gate + isGenerating 회피
+ *   - [수정] insertCharacterIntoDoc / insertThemeIntoDoc — 끝에 자동 트리거 호출 + 토스트 문구 갱신
+ *   - [추가] bgm.js 에서 호출 가능하도록 window.GongdoApp 네임스페이스 export
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.2.0 | 2026-04-19 | 클로이 | 캐릭터/배경/BGM 변경 시 자동 [시작] (JARVIS-2026-04-19-002)
  * v1.1.0 | 2026-04-19 | 클로이 | 게임 iframe 4방향 스크롤바 제거 (JARVIS-2026-04-19-001)
  * v1.0.0 | (S02)      | 클로이 | 최초 작성 — 차시 manifest + 트리 렌더 + UI 토글
  * ============================================
@@ -324,6 +326,27 @@
       btnStart.disabled = false;
       state.isGenerating = false;
     }
+  }
+
+  // ─────────── 자동 [시작] 트리거 (JARVIS-2026-04-19-002) ───────────
+  // 캐릭터/배경/BGM 변경 시 학생 인지와 동일하게 즉시 새 게임 생성.
+  // gate: 첫 게임은 학생이 직접 [시작] 누르도록 (state.lastGeneratedHtml 존재 시에만 자동).
+  // debounce: 800ms — 캐릭터+배경 연속 변경을 1회로 합쳐 rate limit 보호.
+  let autoStartTimer = null;
+  function scheduleAutoStart(reason) {
+    if (autoStartTimer) {
+      clearTimeout(autoStartTimer);
+      autoStartTimer = null;
+    }
+    if (!state.lastGeneratedHtml) return;          // 첫 게임은 학생이 직접
+    if (state.isGenerating) return;                // 이미 생성 중이면 skip
+    if (!state.currentLesson) return;
+    autoStartTimer = setTimeout(() => {
+      autoStartTimer = null;
+      if (state.isGenerating) return;              // 타이머 만료 시점 재확인
+      if (!state.lastGeneratedHtml) return;
+      handleStartClick();
+    }, 800);
   }
 
   // ─────────── AI 생성 중 팝업 ───────────
@@ -922,8 +945,11 @@
     flashEditor();
 
     const lineNumber = nextValue.slice(0, insertStart).split('\n').length;
-    $('#game-status').textContent =
-      `🎨 배경을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    const willAutoStart = !!state.lastGeneratedHtml && !state.isGenerating;
+    $('#game-status').textContent = willAutoStart
+      ? `🎨 배경을 '${label}'(으)로 바꿨어요! 🌟 새 게임을 만들고 있어요...`
+      : `🎨 배경을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    scheduleAutoStart('theme');
   }
 
   function insertCharacterIntoDoc(label, file) {
@@ -961,8 +987,11 @@
 
     // 줄 번호 계산 (1-based)
     const lineNumber = nextValue.slice(0, insertStart).split('\n').length;
-    $('#game-status').textContent =
-      `🎉 주인공을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    const willAutoStart = !!state.lastGeneratedHtml && !state.isGenerating;
+    $('#game-status').textContent = willAutoStart
+      ? `🎉 주인공을 '${label}'(으)로 바꿨어요! 🌟 새 게임을 만들고 있어요...`
+      : `🎉 주인공을 '${label}'(으)로 바꿨어요! 📍 문서 ${lineNumber}번째 줄에 표시했어요. [시작]을 눌러봐요!`;
+    scheduleAutoStart('character');
   }
 
   function scrollEditorToPosition(textarea, pos) {
@@ -1355,5 +1384,10 @@
     initFocusGuard();
     initResponsive();
     console.log('[공도 AI-Game] S10 (emoji 임시) 캐릭터 패널 로드 완료');
+  });
+
+  // bgm.js 등 외부 모듈에서 자동 [시작] 트리거 (JARVIS-2026-04-19-002)
+  window.GongdoApp = Object.assign(window.GongdoApp || {}, {
+    scheduleAutoStart,
   });
 })();
