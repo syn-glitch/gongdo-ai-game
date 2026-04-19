@@ -3,22 +3,23 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.8.1
+ * @version     v1.8.2
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (김감사 QA-006 반영)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (대표 직접)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: v1.8.0 Fallback 시 이전 하이라이트 잔존 (MAJOR-1) + 토스트 위치 page top 시선 멀음 (MINOR-3)
- *   TO-BE: v1.8.1 Fallback 시 showFullCode() 호출 + 코드 영역 안 inline #code-view-info 배너 (3초 자동 fade)
+ *   AS-IS: v1.8.1 — "장르" 매핑 의미 모호 + 매칭 실패 시 일반 안내 (학습 효과 약함)
+ *   TO-BE: v1.8.2 — "장르" [🔍 코드] 버튼 hide + 섹션별 친절 안내 사전 (퀴즈 풍 학습 유도)
  *
  * @features
- *   - [수정] highlightCodeSection() Fallback 분기에서 showFullCode() 호출 (MAJOR-1 fix)
- *   - [추가] showCodeViewInfo(text) / hideCodeViewInfo() — 코드 영역 안 인라인 안내 (3초 자동 사라짐, MINOR-3)
- *   - [수정] 매칭 성공/실패 토스트 → 코드 영역 inline info banner 로 이전 (game-status 도 유지)
+ *   - [수정] renderMarkdownLite() — '장르' 헤딩에는 [🔍 코드] 버튼 미생성
+ *   - [추가] FALLBACK_MESSAGES 사전 — 섹션별 차별 안내 (규칙·조작 방법·배경·주인공·적)
+ *   - [수정] highlightCodeSection() Fallback 분기 — 사전 우선 검색, 없으면 일반 안내
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.8.2 | 2026-04-19 | 클로이 | "장르" 버튼 hide + 섹션별 Fallback 안내 사전 (대표 정리)
  * v1.8.1 | 2026-04-19 | 클로이 | Fallback 잔존 fix + 코드 영역 inline info (QA-006 MAJOR-1, MINOR-3)
  * v1.8.0 | 2026-04-19 | 클로이 | 항목별 [🔍 코드] 버튼 + 부분 하이라이트 (PRD 생략 Fast-Track)
  * v1.7.0 | 2026-04-19 | 클로이 | 분할 뷰 + tokenize root-cause fix (BUNKER-2026-04-19-004, PRD v1.1)
@@ -1009,6 +1010,10 @@
       if (line.startsWith('## '))    return `<div class="md-h2">${line.slice(3)}</div>`;
       if (line.startsWith('### '))   {
         const title = line.slice(4);
+        // v1.8.2: '장르' 는 게임 전체 컨셉 = 단일 매핑 의미 없음 → 버튼 hide (대표 정리)
+        if (title.trim() === '장르') {
+          return `<div class="md-h3"><span class="md-h3-text">${title}</span></div>`;
+        }
         return `<div class="md-h3"><span class="md-h3-text">${title}</span><button type="button" class="md-section-btn" data-section="${escapeAttr(title)}">🔍 코드</button></div>`;
       }
       if (/^- /.test(line))           return `<div class="md-li">• ${line.slice(2)}</div>`;
@@ -1077,6 +1082,16 @@
     }).join('');
   }
 
+  // v1.8.2: 섹션별 Fallback 안내 사전 — 매칭 실패 시 학생이 직접 코드를 둘러보도록 유도
+  // 사전에 없는 섹션은 일반 안내로 fallback
+  const FALLBACK_MESSAGES = {
+    '규칙':       '📜 규칙 코드는 점수, HP, 승리 같은 부분에 숨어 있어요! 코드에서 "score", "hp", "win" 같은 글자를 찾아보세요 🔎',
+    '조작 방법':  '🎮 조작 방법은 키보드 부분에 있어요! 코드에서 "keydown", "ArrowLeft", "Space" 같은 글자를 찾아보세요 🔎',
+    '배경':       '🎨 배경은 그림 그리는 부분에 있어요! 코드에서 "background", "fillRect", "canvas" 같은 글자를 찾아보세요 🔎',
+    '주인공':     '🦸 주인공은 캐릭터 그리는 부분에 있어요! 코드에서 "player", "drawPlayer" 같은 글자를 찾아보세요 🔎',
+    '적':         '👾 적은 외계인 만드는 부분에 있어요! 코드에서 "enemy", "enemies" 같은 글자를 찾아보세요 🔎',
+  };
+
   let currentHighlightSection = null;
   let codeViewInfoTimer = null;
 
@@ -1105,7 +1120,9 @@
     if (!range) {
       // QA-006 MAJOR-1 fix: Fallback 시 이전 하이라이트 클리어 (학생 혼란 회피)
       showFullCode();
-      const msg = `🔎 '${sectionTitle}' 부분과 딱 맞는 코드를 못 찾았어요. 전체 코드에서 찾아볼래요?`;
+      // v1.8.2: 섹션별 차별 안내 (사전 우선 → 없으면 일반)
+      const msg = FALLBACK_MESSAGES[sectionTitle.trim()]
+        || `🔎 '${sectionTitle}' 부분과 딱 맞는 코드를 못 찾았어요. 전체 코드에서 찾아볼래요?`;
       $('#game-status').textContent = msg;
       showCodeViewInfo(msg, 'fail');
       return;
