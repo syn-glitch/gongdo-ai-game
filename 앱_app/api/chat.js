@@ -3,22 +3,24 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        chat.js
- * @version     v1.4.0
+ * @version     v1.5.0
  * @updated     2026-04-19 (KST)
- * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-003 위임)
+ * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO (김감사 QA-007 반영)
  * @ordered-by  용남 대표
  * @description /api/chat — mode="generator" HTML 게임 생성 · mode="tutor" 학생 질문 응답.
  *              모델: claude-haiku-4-5-20251001 · Prompt Caching 적용.
  *
  * @change-summary
- *   AS-IS: v1.3 — 게임 코드만 생성, 자연어 ↔ 코드 매핑 학습 자료 0
- *   TO-BE: v1.4 — 【🎓 학생 학습용 주석】 블록 추가 (// 📝 "...") + max_tokens 4000→5000 (BUNKER PRD §FR-15~18)
+ *   AS-IS: v1.4 — "임시 에셋 폴백" stale 블록이 PNG 배포 후에도 살아있어 AI 가 100% 이모지 사용 (CRITICAL)
+ *   TO-BE: v1.5 — stale 블록 제거 + 케이스 A 예시를 drawImage 패턴으로 갱신 → 이미지 우선, 이모지는 onerror 폴백
  *
  * @features
- *   - [추가] SYSTEM_GENERATOR 【🎓 학생 학습용 주석】 — 코드에 5~10개 친화 주석 자동 포함
- *   - [수정] generator max_tokens 4000 → 5000 (NFR-5, 주석 토큰 여유분)
+ *   - [삭제] SYSTEM_GENERATOR 【임시 에셋 폴백】 블록 (PNG 배포 후 사실과 어긋남)
+ *   - [수정] 케이스 A 예시 — drawImage 패턴 (이미지 프리로드 + drawImage / 이모지는 폴백)
+ *   - [복원] 규칙 0 ① 의 이미지 우선 정책이 케이스 A 와 일관되도록 정렬
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.5.0 | 2026-04-19 | 알렉스 | 임시 에셋 폴백 stale 블록 제거 + 케이스 A drawImage 갱신 (QA-007 CRITICAL fix)
  * v1.4.0 | 2026-04-19 | 알렉스 | 학생 학습용 주석 + max_tokens 상향 (BUNKER-2026-04-19-003)
  * v1.3.0 | 2026-04-19 | 알렉스 | 게임 뷰포트 고정 규칙 추가 (JARVIS-2026-04-19-001)
  * v1.2.0 | 2026-04-19 | 에이다 | S-AUTH-01 + S-AI-01/S19 + S-ERR-01 통합 패치
@@ -188,29 +190,59 @@ const H = () => canvas.height;
 만약 문서에 이미지 URL 이 명시되지 않았다면 이모지 폴백만 사용:
 - 토리 → 👒 / ㅋㅋ → 🦸 / 밥 → 🐰 / 레옹 → 🦁
 
-【임시 에셋 폴백 — 매우 중요. 반드시 준수】
-현재 캐릭터 PNG 파일은 아직 준비 중이어서 로드가 실패할 확률이 매우 높습니다. 따라서 **캐릭터는 반드시 이모지로 렌더링** 하는 코드를 기본으로 작성하고, 실제 이미지 로드는 보조 수단으로만 시도합니다.
-
-이모지 매핑 (필수 암기):
+【이모지 폴백 매핑 — onerror·이미지 URL 미명시 시에만】
+넷마블 PNG 가 로드 실패하거나 학생 문서에 이미지 URL 이 아예 없을 때만 사용:
 - 토리 → 👒
 - ㅋㅋ → 🦸
 - 밥  → 🐰
 - 레옹 → 🦁
 
-【케이스 A — Canvas 2D 기반 게임 (fillRect·drawImage 사용)】
-**플레이어 캐릭터를 단색 사각형(fillRect)으로 그리지 마세요.** 대신 ctx.fillText 로 이모지를 큰 글씨로 렌더링:
+이미지 URL 이 학생 문서에 명시되어 있으면 위 이모지는 **폴백 전용** — 평소엔 절대 메인 렌더링으로 쓰지 마세요.
+
+【케이스 A — Canvas 2D 게임 (drawImage 우선, 이모지는 폴백)】
+**플레이어 캐릭터는 학생 문서에 명시된 PNG 를 drawImage 로 그립니다.** 단색 사각형(fillRect) 이나 이모지 fillText 만 쓰는 것 금지. 다음 패턴을 그대로 따르세요:
 
 \`\`\`js
-// 플레이어 그리기 예시
+// 1) 스크립트 최상단 — 이미지 프리로드 (draw 루프 밖!)
+const playerImg = new Image();
+const playerReady = { v: false };
+playerImg.onload  = () => { playerReady.v = true; };
+playerImg.src = <STUDENT_DOCUMENT_IMAGE_URL>;  // ★ 학생 문서의 "이미지: https://..." 줄에서 그대로 복사
+
+// 2) draw 함수 — 로드 완료 시 drawImage, 아니면 이모지 폴백 (한 프레임에 둘 중 하나만)
 function drawPlayer(ctx, x, y, size) {
-  ctx.font = \`\${size}px "Apple Color Emoji", "Segoe UI Emoji", serif\`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🦸', x, y);  // 이모지 매핑에 따라 바꾸세요
+  if (playerReady.v) {
+    ctx.drawImage(playerImg, x - size/2, y - size/2, size, size);
+  } else {
+    ctx.font = \`\${size}px "Apple Color Emoji", "Segoe UI Emoji", serif\`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(<EMOJI_FALLBACK>, x, y);  // ★ 학생 캐릭터에 맞는 이모지 (위 폴백 매핑표 참조)
+  }
 }
 \`\`\`
 
-적·장애물·아이템도 이모지로 표현 가능합니다 (예: 적=👾, 아이템=⭐, 폭탄=💣).
+★ 위 \`<STUDENT_DOCUMENT_IMAGE_URL>\` 과 \`<EMOJI_FALLBACK>\` 은 **plceholder** 입니다.
+**절대 \`kk_idle.png\` / \`🦸\` 를 그대로 복사하지 마세요.** 학생이 어떤 캐릭터를 골랐는지 문서에서 읽고:
+
+| 학생 문서의 캐릭터 | playerImg.src (URL 그대로 복사) | 이모지 폴백 |
+|------------------|--------------------------------|-------------|
+| ㅋㅋ | https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/kk_idle.png | 🦸 |
+| 토리 | https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/tory_idle.png | 👒 |
+| 밥 | https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/bob_idle.png | 🐰 |
+| 레옹 | https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters/leon_idle.png | 🦁 |
+
+❌ 위반 사례 (절대 금지):
+- 학생이 "주인공: 밥" 이라 적었는데 코드에 \`kk_idle.png\` 가 들어가는 것 ← 가장 흔한 실수
+- 4명 모두 같은 PNG 사용
+- placeholder 문자(\`<STUDENT_DOCUMENT_IMAGE_URL>\`) 를 그대로 코드에 남기는 것
+
+❌ 금지:
+- drawImage 호출 0건의 코드 (PNG URL 무시)
+- draw 함수 안에서 매 프레임 \`new Image()\` 생성
+- onload 한 프레임에서 그린 뒤 onerror 가 같은 프레임에서 fillText 로 덮어씀
+
+적·장애물·아이템은 이미지 URL 이 명시되지 않은 경우 이모지로 표현 가능합니다 (예: 적=👾, 아이템=⭐, 폭탄=💣).
 
 【케이스 B — DOM <img> 기반 게임】
 \`<img>\` 사용 시 onerror 속성에 인라인 폴백을 반드시 포함:
