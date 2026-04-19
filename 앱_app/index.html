@@ -258,9 +258,26 @@
         <div class="code-view-warn" id="code-view-warn" hidden>
           📝 문서를 바꿨어요! [▶ 시작]을 다시 눌러야 새 코드가 보여요.
         </div>
-        <div class="code-view-body" id="code-view-body">
-          <pre class="code-view-pre"><code id="code-view-content"></code></pre>
+        <div class="code-view-warn code-view-stale" id="code-view-stale" hidden>
+          🕰️ 옛날 게임이에요. 새로 [▶ 시작]을 눌러야 정확히 보여요!
         </div>
+        <!-- BUNKER-004: 분할 뷰 — 위 마크다운 (40%) / 아래 코드 (60%) -->
+        <section class="code-view-md-section" role="region" aria-label="내 바이브코딩 문서">
+          <header class="code-view-section-header">
+            <h3 class="code-view-section-title">📝 내 바이브코딩 문서</h3>
+            <p class="code-view-section-desc">내가 한국어로 쓴 거예요</p>
+          </header>
+          <div class="code-view-md" id="code-view-md"></div>
+        </section>
+        <section class="code-view-code-section" role="region" aria-label="진짜 코드">
+          <header class="code-view-section-header code-view-section-header-code">
+            <h3 class="code-view-section-title">💻 진짜 코드</h3>
+            <p class="code-view-section-desc">AI 가 만든 진짜 코드예요</p>
+          </header>
+          <div class="code-view-body" id="code-view-body">
+            <pre class="code-view-pre"><code id="code-view-content"></code></pre>
+          </div>
+        </section>
       </div>
     </section>
 

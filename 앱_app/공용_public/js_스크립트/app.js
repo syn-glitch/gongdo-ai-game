@@ -3,26 +3,25 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.6.0
+ * @version     v1.7.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-003 위임 / PRD v1.1)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-004 위임 / PRD v1.1)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: 학생이 자연어 → 코드 매핑 시각화 부재 → 학습 깊이 부족
- *   TO-BE: [🔍 코드 구경] 오버레이 + chat.js v1.4 학생 학습용 주석 + snapshot 변경 감지
+ *   AS-IS: v1.6 [코드 구경] = 코드만 노출 + tokenize 마커 잠재 버그 (`class` 키워드 충돌)
+ *   TO-BE: v1.7 분할 뷰 (위 마크다운 / 아래 코드 40/60) + tokenize 마커 root-cause fix (커스텀 element)
  *
  * @features
- *   - [추가] state.lastGeneratedHtmlSnapshot = { html, sourceText } — 문서 변경 감지 (FR-19)
- *   - [추가] handleStartClick 끝에서 snapshot 갱신
- *   - [추가] openCodeView / closeCodeView / updateCodeView — 오버레이 토글, 변경 안내 배지
- *   - [추가] tokenize() — CSS 정규식 기반 가벼운 syntax highlighting (외부 라이브러리 X)
- *   - [추가] initCodeViewPanel() — 1·2·3차시에서만 [🔍 코드 구경] 노출 (FR-3)
- *   - [수정] selectLesson() — 차시 변경 시 [🔍 코드 구경] 버튼 표시/숨김 (1·2·3차시만)
- *   - 거절 (PRD §9.4): 코드 직접 수정 X / hover 매핑 X / 별도 LLM 호출 X / 외부 라이브러리 X
+ *   - [추가] renderMarkdownLite() — ## ### - --- 빈 줄 가벼운 렌더 (외부 라이브러리 X)
+ *   - [수정] tokenizeCode() — `class="code-tag-X"` → `<x-c>` `<x-k>` (root-cause fix, FR-18)
+ *   - [수정] updateCodeView() — 분할 렌더 + 옵션 B (구버전 게임 fallback + 노란 배지)
+ *   - [수정] index.html: #code-view-overlay 본문 분할 (마크다운 + 구분선 + 코드 섹션)
+ *   - 거절 (PRD §9.4 + §9.5): hover 매핑 X / 외부 라이브러리 X / 학생 직접 수정 X / inline 스타일링 X / 옵션 A 자율 변경 X
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.7.0 | 2026-04-19 | 클로이 | 분할 뷰 + tokenize root-cause fix (BUNKER-2026-04-19-004, PRD v1.1)
  * v1.6.0 | 2026-04-19 | 클로이 | [🔍 코드 구경] 오버레이 + 변경 감지 (BUNKER-2026-04-19-003, PRD v1.1)
  * v1.5.0 | 2026-04-19 | 클로이 | 문서 [↻ 처음으로] 초기화 버튼 (BUNKER-2026-04-19-002, PRD v1.1)
  * v1.4.0 | 2026-04-19 | 클로이 | 차시 변형(variants) 선택 UI (BUNKER-2026-04-19-001 → JARVIS UI 통합)
@@ -985,43 +984,72 @@
   }
 
   // FR-6 + §9.2 색상 토큰: comment / keyword
-  // 주의: HTML+JS 혼합 코드에서 정규식만으로 JS 문자열과 HTML 속성값을 구분 불가 →
-  // string 색칠은 의도적으로 제외 (송PO §9.4 자율 금지 = 외부 라이브러리 X 와 일관).
+  // BUNKER-004 FR-18: 마커를 `class="code-tag-X"` → `<x-c>` `<x-k>` 커스텀 element 로 변경.
+  // 이유: keyword 정규식이 자기 자신이 만든 span 의 `class` 속성을 매칭하던 잠재 버그 root-cause fix.
+  // 주의: HTML+JS 혼합 코드에서 정규식만으로 JS 문자열과 HTML 속성값을 구분 불가 → string 색칠 제외.
   function tokenizeCode(rawCode) {
     let html = escapeHtml(rawCode);
     // 1) HTML comments <!-- ... -->
-    html = html.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="code-tag-comment">$1</span>');
+    html = html.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<x-c>$1</x-c>');
     // 2) JS line comments // ...
-    html = html.replace(/(\/\/[^\n]*)/g, '<span class="code-tag-comment">$1</span>');
-    // 3) 키워드
-    html = html.replace(/\b(function|const|let|var|if|else|return|new|for|while|class|this|null|true|false)\b/g, '<span class="code-tag-keyword">$1</span>');
+    html = html.replace(/(\/\/[^\n]*)/g, '<x-c>$1</x-c>');
+    // 3) 키워드 (class 포함 — 커스텀 element 마커이므로 충돌 없음)
+    html = html.replace(/\b(function|const|let|var|if|else|return|new|for|while|class|this|null|true|false)\b/g, '<x-k>$1</x-k>');
     return html;
+  }
+
+  // BUNKER-004 FR-14~17: 가벼운 마크다운 렌더 (외부 라이브러리 0).
+  // 처리: `## ` 헤딩, `### ` 헤딩, `- ` 리스트, `---` 구분선, 빈 줄. inline 스타일링은 의도적 미처리.
+  function renderMarkdownLite(md) {
+    if (!md) return '<div class="md-empty">내용 없음</div>';
+    const escaped = escapeHtml(md);
+    return escaped.split('\n').map((line) => {
+      if (line.startsWith('## '))    return `<div class="md-h2">${line.slice(3)}</div>`;
+      if (line.startsWith('### '))   return `<div class="md-h3">${line.slice(4)}</div>`;
+      if (/^- /.test(line))           return `<div class="md-li">• ${line.slice(2)}</div>`;
+      if (/^---+$/.test(line.trim())) return '<hr class="md-hr">';
+      if (line.trim() === '')         return '<br>';
+      return `<div class="md-p">${line}</div>`;
+    }).join('');
   }
 
   function updateCodeView() {
     const overlay  = $('#code-view-overlay');
+    const mdEl     = $('#code-view-md');
     const content  = $('#code-view-content');
     const warn     = $('#code-view-warn');
-    if (!overlay || !content || !warn) return;
+    const stale    = $('#code-view-stale');
+    if (!overlay || !content || !warn || !stale || !mdEl) return;
 
-    // FR-11: 게임 미생성 시 안내
+    // FR-11: 게임 미생성 시 안내 (두 영역 합쳐서 하나의 안내)
     if (!state.lastGeneratedHtml) {
-      content.innerHTML = ''
+      const empty = ''
         + '<div class="code-view-empty">'
         + '<div class="code-view-empty-emoji">🎮</div>'
         + '<p>먼저 [▶ 시작]을 눌러 게임을 만들어요!</p>'
         + '<p>그러면 진짜 코드를 구경할 수 있어요.</p>'
         + '</div>';
+      mdEl.innerHTML = empty;
+      content.innerHTML = '';
       warn.hidden = true;
+      stale.hidden = true;
       return;
     }
-    // FR-12/13: 변경 감지 → 노란 안내 배지
+    // BUNKER-004 옵션 B: 마크다운 출처 결정
+    //   snapshot 있으면 sourceText (1:1 일치) → FR-12 동기성 보장
+    //   없으면 editor.value 로 fallback + 노란 stale 배지 (FR-13a/b, AC-Edge-9)
     const editor = $('#editor-textarea');
     const snap   = state.lastGeneratedHtmlSnapshot;
-    const stale  = !!snap && editor && editor.value !== snap.sourceText;
-    warn.hidden = !stale;
-    // FR-6: syntax highlight 적용해 표시 (FR-14: 학생용 주석 없는 구버전이어도 그대로 표시)
+    const mdSource = snap ? snap.sourceText : (editor?.value || '');
+    mdEl.innerHTML = renderMarkdownLite(mdSource);
+
+    // FR-7 + 18: 코드 영역 (구버전 게임도 그대로 표시 — 학생용 주석만 없을 뿐)
     content.innerHTML = tokenizeCode(state.lastGeneratedHtml);
+
+    // FR-11 변경 감지 배지 (snapshot 있을 때만 비교 의미 있음)
+    warn.hidden  = !(snap && editor && editor.value !== snap.sourceText);
+    // FR-13b stale 배지 (snapshot 없는 구버전 게임에서만)
+    stale.hidden = !!snap;
   }
 
   function openCodeView() {

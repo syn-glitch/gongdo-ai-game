@@ -653,6 +653,63 @@
   color: var(--color-brown);
 }
 .code-view-warn[hidden] { display: none; }
+/* BUNKER-004 stale 배지 — 구버전 게임 안내 */
+.code-view-stale {
+  background: #ffe5b4; /* 약간 다른 yellow tone */
+}
+
+/* BUNKER-004 분할 뷰 — 위 마크다운 (40%) / 아래 코드 (60%) */
+.code-view-md-section,
+.code-view-code-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.code-view-md-section   { flex: 0 0 40%; background: var(--color-cream); }
+.code-view-code-section { flex: 1 1 60%; background: var(--color-cream-deep); border-top: 2px solid var(--color-black); }
+
+.code-view-section-header {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-cream-deep);
+  border-bottom: 1px dashed var(--color-brown-soft);
+}
+.code-view-section-header-code { background: var(--color-cream); }
+.code-view-section-title {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 800;
+  color: var(--color-brown);
+}
+.code-view-section-desc {
+  margin: 2px 0 0;
+  font-size: var(--fs-xs, 11px);
+  color: var(--color-brown-soft);
+  font-weight: 600;
+}
+
+/* 마크다운 영역 본문 */
+.code-view-md {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: var(--space-3);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-brown);
+}
+.md-h2  { font-size: 1.2em; font-weight: 800; color: var(--color-brown); margin: 10px 0 4px; }
+.md-h3  { font-weight: 800; color: var(--color-brown); margin: 6px 0 2px; }
+.md-li  { padding-left: 12px; color: var(--color-brown); }
+.md-p   { color: var(--color-brown); }
+.md-hr  { border: 0; border-top: 1px dashed var(--color-brown-soft); margin: 8px 0; }
+.md-empty { color: var(--color-brown-soft); font-style: italic; padding: var(--space-3); }
+
+/* 모바일 — 마크다운 작게 (30/70) */
+@media (max-width: 767px) {
+  .code-view-md-section   { flex: 0 0 30%; }
+  .code-view-code-section { flex: 1 1 70%; }
+}
 
 .code-view-body {
   flex: 1 1 auto;
@@ -680,10 +737,10 @@
 }
 .code-view-empty-emoji { font-size: 64px; line-height: 1; margin-bottom: var(--space-3); }
 
-/* §9.2 색상 토큰 — 송PO 결정 (자비스 자율 X) */
-.code-tag-comment { color: var(--color-brown-soft); font-style: italic; }
-.code-tag-keyword { color: var(--color-brown); font-weight: 800; }
-.code-tag-string  { color: #2d5f2d; }
+/* §9.2 색상 토큰 — BUNKER-004 v1.1: 마커를 커스텀 element 로 root-cause fix */
+x-c { color: var(--color-brown-soft); font-style: italic; }
+x-k { color: var(--color-brown); font-weight: 800; }
+/* (구 .code-tag-* 셀렉터 제거 — PRD §9.2.4 "완전 제거 권장" 준수) */
 
 /* ─────── 문서 [↻ 처음으로] 초기화 confirm (BUNKER-2026-04-19-002 / app.js v1.5.0) ─────── */
 .reset-confirm-popover {
