@@ -699,11 +699,47 @@
   color: var(--color-brown);
 }
 .md-h2  { font-size: 1.2em; font-weight: 800; color: var(--color-brown); margin: 10px 0 4px; }
-.md-h3  { font-weight: 800; color: var(--color-brown); margin: 6px 0 2px; }
+.md-h3  {
+  font-weight: 800; color: var(--color-brown); margin: 6px 0 2px;
+  display: flex; align-items: center; gap: 8px;
+}
+.md-h3-text { flex: 0 0 auto; }
 .md-li  { padding-left: 12px; color: var(--color-brown); }
 .md-p   { color: var(--color-brown); }
 .md-hr  { border: 0; border-top: 1px dashed var(--color-brown-soft); margin: 8px 0; }
 .md-empty { color: var(--color-brown-soft); font-style: italic; padding: var(--space-3); }
+
+/* v1.8: 섹션별 [🔍 코드] 버튼 (### 옆 인라인) */
+.md-section-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  background: var(--color-cream-deep);
+  color: var(--color-brown);
+  border: 1.5px solid var(--color-brown-soft);
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.md-section-btn:hover {
+  background: var(--color-yellow);
+  border-color: var(--color-black);
+}
+
+/* v1.8: 전체 보기 토글 (코드 헤더) */
+.code-view-show-all {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  background: var(--color-yellow);
+  color: var(--color-brown);
+  border: 1.5px solid var(--color-black);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.code-view-show-all[hidden] { display: none; }
+.code-view-show-all:hover { background: var(--color-cream-deep); }
 
 /* 모바일 — 마크다운 작게 (30/70) */
 @media (max-width: 767px) {
@@ -738,9 +774,24 @@
 .code-view-empty-emoji { font-size: 64px; line-height: 1; margin-bottom: var(--space-3); }
 
 /* §9.2 색상 토큰 — BUNKER-004 v1.1: 마커를 커스텀 element 로 root-cause fix */
-x-c { color: var(--color-brown-soft); font-style: italic; }
+/* v1.8: 주석 강화 — 배경 yellow tint + 좌측 border 로 코드 ↔ 주석 시각 구분 명확 */
+x-c {
+  color: var(--color-brown-soft);
+  font-style: italic;
+  background: rgba(247, 197, 72, 0.18);
+  border-left: 2px solid var(--color-yellow);
+  padding: 0 4px 0 6px;
+  border-radius: 2px;
+}
 x-k { color: var(--color-brown); font-weight: 800; }
-/* (구 .code-tag-* 셀렉터 제거 — PRD §9.2.4 "완전 제거 권장" 준수) */
+
+/* v1.8: 코드 라인 wrap (.code-line) + 섹션 하이라이트 */
+.code-line { display: block; padding: 0 6px; }
+.code-line.is-highlight {
+  background: rgba(247, 197, 72, 0.35);
+  border-left: 3px solid var(--color-yellow);
+  padding-left: 8px;
+}
 
 /* ─────── 문서 [↻ 처음으로] 초기화 confirm (BUNKER-2026-04-19-002 / app.js v1.5.0) ─────── */
 .reset-confirm-popover {

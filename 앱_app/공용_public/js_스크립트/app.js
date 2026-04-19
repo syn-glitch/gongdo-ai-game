@@ -3,24 +3,26 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.7.0
+ * @version     v1.8.0
  * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (벙커 BUNKER-2026-04-19-004 위임 / PRD v1.1)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
  *
  * @change-summary
- *   AS-IS: v1.6 [코드 구경] = 코드만 노출 + tokenize 마커 잠재 버그 (`class` 키워드 충돌)
- *   TO-BE: v1.7 분할 뷰 (위 마크다운 / 아래 코드 40/60) + tokenize 마커 root-cause fix (커스텀 element)
+ *   AS-IS: v1.7 분할 뷰 = 마크다운 전체 + 코드 전체 동시 노출 (능동 탐색 X)
+ *   TO-BE: v1.8 마크다운 ### 헤딩 옆 [🔍 코드] 버튼 → 해당 섹션 코드 하이라이트 + 자동 스크롤
  *
  * @features
- *   - [추가] renderMarkdownLite() — ## ### - --- 빈 줄 가벼운 렌더 (외부 라이브러리 X)
- *   - [수정] tokenizeCode() — `class="code-tag-X"` → `<x-c>` `<x-k>` (root-cause fix, FR-18)
- *   - [수정] updateCodeView() — 분할 렌더 + 옵션 B (구버전 게임 fallback + 노란 배지)
- *   - [수정] index.html: #code-view-overlay 본문 분할 (마크다운 + 구분선 + 코드 섹션)
- *   - 거절 (PRD §9.4 + §9.5): hover 매핑 X / 외부 라이브러리 X / 학생 직접 수정 X / inline 스타일링 X / 옵션 A 자율 변경 X
+ *   - [추가] renderMarkdownLite() ### 헤딩에 .md-section-btn 인라인 버튼 삽입 (data-section)
+ *   - [추가] findSectionKeywords() / findCodeRange() — 학생 주석 인용 정규식 매핑 + Fallback
+ *   - [추가] renderCodeLines() — 코드 라인별 wrap (.code-line / .code-line.is-highlight)
+ *   - [추가] highlightCodeSection(section) — 매칭 → 하이라이트 + scrollIntoView + [📜 전체] 토글
+ *   - [추가] showFullCode() — 하이라이트 해제, 전체 보기 복귀
+ *   - [수정] x-c 주석 스타일 강화 (배경 yellow tint + 좌측 border) — 코드 ↔ 주석 시각 구분
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.8.0 | 2026-04-19 | 클로이 | 항목별 [🔍 코드] 버튼 + 부분 하이라이트 (PRD 생략 Fast-Track)
  * v1.7.0 | 2026-04-19 | 클로이 | 분할 뷰 + tokenize root-cause fix (BUNKER-2026-04-19-004, PRD v1.1)
  * v1.6.0 | 2026-04-19 | 클로이 | [🔍 코드 구경] 오버레이 + 변경 감지 (BUNKER-2026-04-19-003, PRD v1.1)
  * v1.5.0 | 2026-04-19 | 클로이 | 문서 [↻ 처음으로] 초기화 버튼 (BUNKER-2026-04-19-002, PRD v1.1)
@@ -982,6 +984,8 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
+  function escapeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
+  function escapeRegex(s) { return String(s).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&'); }
 
   // FR-6 + §9.2 색상 토큰: comment / keyword
   // BUNKER-004 FR-18: 마커를 `class="code-tag-X"` → `<x-c>` `<x-k>` 커스텀 element 로 변경.
@@ -999,18 +1003,109 @@
   }
 
   // BUNKER-004 FR-14~17: 가벼운 마크다운 렌더 (외부 라이브러리 0).
-  // 처리: `## ` 헤딩, `### ` 헤딩, `- ` 리스트, `---` 구분선, 빈 줄. inline 스타일링은 의도적 미처리.
+  // v1.8: ### 헤딩 옆에 [🔍 코드] 버튼 인라인 삽입 (data-section 으로 섹션명 전달).
   function renderMarkdownLite(md) {
     if (!md) return '<div class="md-empty">내용 없음</div>';
     const escaped = escapeHtml(md);
     return escaped.split('\n').map((line) => {
       if (line.startsWith('## '))    return `<div class="md-h2">${line.slice(3)}</div>`;
-      if (line.startsWith('### '))   return `<div class="md-h3">${line.slice(4)}</div>`;
+      if (line.startsWith('### '))   {
+        const title = line.slice(4);
+        return `<div class="md-h3"><span class="md-h3-text">${title}</span><button type="button" class="md-section-btn" data-section="${escapeAttr(title)}">🔍 코드</button></div>`;
+      }
       if (/^- /.test(line))           return `<div class="md-li">• ${line.slice(2)}</div>`;
       if (/^---+$/.test(line.trim())) return '<hr class="md-hr">';
       if (line.trim() === '')         return '<br>';
       return `<div class="md-p">${line}</div>`;
     }).join('');
+  }
+
+  // ─────────── 섹션 → 코드 매핑 + 라인 하이라이트 (v1.8) ───────────
+  // 매핑 알고리즘:
+  //   1) 섹션 제목 자체로 // 📝 주석 검색
+  //   2) 실패 시 섹션 안 첫 항목들의 키워드로 재시도
+  //   3) 모두 실패 시 Fallback (전체 보기 + 안내 토스트)
+  function findSectionKeywords(mdSource, sectionTitle) {
+    const keywords = [sectionTitle];
+    if (!mdSource) return keywords;
+    const lines = mdSource.split('\n');
+    const startIdx = lines.findIndex((l) => l.trim() === `### ${sectionTitle}` || l.trim().startsWith(`### ${sectionTitle}`));
+    if (startIdx < 0) return keywords;
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const ln = lines[i].trim();
+      if (ln.startsWith('### ') || ln.startsWith('## ')) break;
+      if (ln.startsWith('- ')) {
+        const item = ln.slice(2).trim();
+        const colonIdx = item.indexOf(':');
+        if (colonIdx > 0) keywords.push(item.slice(0, colonIdx).trim());
+        keywords.push(item);
+      }
+    }
+    return keywords;
+  }
+
+  function findCodeRange(rawCode, keywords) {
+    if (!rawCode || !keywords?.length) return null;
+    const lines = rawCode.split('\n');
+    for (const kw of keywords) {
+      if (!kw) continue;
+      const re = new RegExp('//\\s*📝[^\n]*' + escapeRegex(kw));
+      for (let i = 0; i < lines.length; i++) {
+        if (re.test(lines[i])) {
+          // 다음 빈 줄 또는 다음 // 📝 까지 (단, 다음 // 📝 시작 직전까지)
+          let end = i + 1;
+          while (end < lines.length) {
+            const t = lines[end].trim();
+            if (/\/\/\s*📝/.test(t)) break;
+            if (t === '' && end > i + 1) break;
+            end++;
+          }
+          return { start: i, end: Math.max(i, end - 1) };
+        }
+      }
+    }
+    return null;
+  }
+
+  // 코드 라인별 wrap (.code-line) + 하이라이트 범위 적용.
+  function renderCodeLines(rawCode, range) {
+    const tokenized = tokenizeCode(rawCode);
+    const lines = tokenized.split('\n');
+    return lines.map((line, idx) => {
+      const isHL = range && idx >= range.start && idx <= range.end;
+      const cls = 'code-line' + (isHL ? ' is-highlight' : '');
+      // 빈 줄도 시각 공간 확보 위해 nbsp
+      return `<span class="${cls}">${line || '&nbsp;'}</span>`;
+    }).join('');
+  }
+
+  let currentHighlightSection = null;
+
+  function highlightCodeSection(sectionTitle) {
+    if (!state.lastGeneratedHtml) return;
+    const snap = state.lastGeneratedHtmlSnapshot;
+    const mdSource = snap ? snap.sourceText : ($('#editor-textarea')?.value || '');
+    const keywords = findSectionKeywords(mdSource, sectionTitle);
+    const range = findCodeRange(state.lastGeneratedHtml, keywords);
+    if (!range) {
+      // Fallback — 매칭 실패 안내, 전체 보기 유지
+      $('#game-status').textContent = `🔎 '${sectionTitle}' 부분과 딱 맞는 코드를 못 찾았어요. 전체 코드에서 직접 찾아볼래요?`;
+      return;
+    }
+    currentHighlightSection = sectionTitle;
+    $('#code-view-content').innerHTML = renderCodeLines(state.lastGeneratedHtml, range);
+    $('#btn-code-show-all').hidden = false;
+    $('#game-status').textContent = `🔍 '${sectionTitle}' 부분 코드를 찾았어요!`;
+    // 부드러운 자동 스크롤
+    requestAnimationFrame(() => {
+      const firstHL = document.querySelector('#code-view-content .code-line.is-highlight');
+      if (firstHL) firstHL.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  function showFullCode() {
+    currentHighlightSection = null;
+    $('#code-view-content').innerHTML = renderCodeLines(state.lastGeneratedHtml, null);
+    $('#btn-code-show-all').hidden = true;
   }
 
   function updateCodeView() {
@@ -1044,7 +1139,10 @@
     mdEl.innerHTML = renderMarkdownLite(mdSource);
 
     // FR-7 + 18: 코드 영역 (구버전 게임도 그대로 표시 — 학생용 주석만 없을 뿐)
-    content.innerHTML = tokenizeCode(state.lastGeneratedHtml);
+    // v1.8: 라인 wrap 적용 (하이라이트 가능 구조). 처음 열 때는 하이라이트 X (전체 보기)
+    currentHighlightSection = null;
+    content.innerHTML = renderCodeLines(state.lastGeneratedHtml, null);
+    if ($('#btn-code-show-all')) $('#btn-code-show-all').hidden = true;
 
     // FR-11 변경 감지 배지 (snapshot 있을 때만 비교 의미 있음)
     warn.hidden  = !(snap && editor && editor.value !== snap.sourceText);
@@ -1090,6 +1188,24 @@
       if (overlay.hidden) openCodeView(); else closeCodeView();
     });
     closeBtn.addEventListener('click', closeCodeView);
+    // v1.8: 마크다운 영역 [🔍 코드] 버튼 위임 핸들러
+    const mdEl = $('#code-view-md');
+    if (mdEl) {
+      mdEl.addEventListener('click', (e) => {
+        const sBtn = e.target.closest('.md-section-btn');
+        if (!sBtn) return;
+        e.stopPropagation();
+        highlightCodeSection(sBtn.dataset.section);
+      });
+    }
+    // v1.8: [📜 전체 보기] 토글
+    const showAllBtn = $('#btn-code-show-all');
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showFullCode();
+      });
+    }
     // FR-8c: 외부 클릭 닫힘 (오버레이 자체 클릭 시는 닫히지 않게 — 헤더/본문 모두 overlay 자식)
     document.addEventListener('click', (e) => {
       if (overlay.hidden) return;
