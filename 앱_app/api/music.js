@@ -1,5 +1,27 @@
-// 공도 AI-Game — /api/music (S14)
-// 학생 프롬프트 → Claude JSON 악보 → 클라이언트 Tone.js 재생
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        music.js
+ * @version     v1.1.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👩‍💻 에이다 (자비스 개발팀) · 지시: 자비스 PO
+ * @ordered-by  용남 대표
+ * @description /api/music — 학생 프롬프트 → Claude JSON 악보 → Tone.js 재생.
+ *
+ * @change-summary
+ *   AS-IS: studentId 단일 키 rate limit · 에러 응답에 ENV 이름 노출
+ *   TO-BE: studentId + IP 복합 키 (S-AUTH-01) · 에러 일반화 (S-ERR-01)
+ *
+ * @features
+ *   - [수정] checkAndIncrement 에 IP 전달
+ *   - [수정] ANTHROPIC_API_KEY 미설정 응답을 'configuration_error' 일반화
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-19 | 에이다 | S-AUTH-01 + S-ERR-01
+ * v1.0.0 | 2026-04-14 | 에이다 | 최초 작성 (S14)
+ * ============================================
+ */
 // rate limit: 5회/분 (generator와 동일, 계정당 비용 폭증 방지)
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -106,15 +128,17 @@ export default async function handler(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
 
   const prompt = (body?.prompt || '').toString().trim().slice(0, 200);
-  const studentId = (body?.studentId || '').trim() ||
-                    (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'anon');
+  // S-AUTH-01: IP 추출하여 rate limit 복합 키 보조
+  const forwardedFor = (req.headers['x-forwarded-for'] || '').toString();
+  const reqIp = forwardedFor.split(',')[0].trim() || req.socket?.remoteAddress || '';
+  const studentId = (body?.studentId || '').trim() || reqIp || 'anon';
 
   if (!prompt) {
     res.status(400).json({ error: '음악 프롬프트를 입력해주세요' });
     return;
   }
 
-  const rl = await checkAndIncrement('music', studentId, 5);
+  const rl = await checkAndIncrement('music', studentId, 5, reqIp);
   if (!rl.ok) {
     res.status(429).json({
       error: 'rate_limited',
@@ -126,7 +150,8 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'ANTHROPIC_API_KEY 미설정' });
+    // S-ERR-01: ENV 이름 노출 회피
+    res.status(500).json({ error: 'configuration_error', message: '공도쌤 작곡가가 잠깐 쉬는 중이에요.' });
     return;
   }
 

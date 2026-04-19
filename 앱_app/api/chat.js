@@ -1,8 +1,31 @@
-// 공도 AI-Game — /api/chat (S04·S07)
-// mode="generator": 하네스 문서 → HTML 게임 생성 · rate limit 5회/분
-// mode="tutor":     학생 질문 → 공도쌤 답변       · rate limit 15회/분
-//
-// 모델: claude-haiku-4-5-20251001 · Prompt Caching 적용
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        chat.js
+ * @version     v1.2.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👩‍💻 에이다 (자비스 개발팀) · 지시: 자비스 PO
+ * @ordered-by  용남 대표
+ * @description /api/chat — mode="generator" HTML 게임 생성 · mode="tutor" 학생 질문 응답.
+ *              모델: claude-haiku-4-5-20251001 · Prompt Caching 적용.
+ *
+ * @change-summary
+ *   AS-IS: v1.1 — studentId 단일 키 rate limit · prompt injection 방어 없음 · 에러에 ENV 이름 노출
+ *   TO-BE: v1.2 — IP 복합 키 rate limit (S-AUTH-01) · user input XML 래핑 (S-AI-01 = S19) · 외부 script 차단 · 에러 일반화 (S-ERR-01)
+ *
+ * @features
+ *   - [수정] checkAndIncrement 에 IP 전달 (S-AUTH-01)
+ *   - [추가] user input 을 <student_document> 태그로 감싸 system prompt 경계 강화 (S-AI-01)
+ *   - [추가] 생성 HTML post-filter — 외부 http(s) script src 차단 (S-AI-01)
+ *   - [수정] 설정 오류 응답을 'configuration_error' 로 일반화 (S-ERR-01)
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.2.0 | 2026-04-19 | 에이다 | S-AUTH-01 + S-AI-01/S19 + S-ERR-01 통합 패치
+ * v1.1.0 | 2026-04-15 | 에이다 | 캐릭터 이모지 강제 치환 + BGM 주입 개선
+ * v1.0.0 | 2026-04-14 | 에이다 | 최초 작성 (S04/S07)
+ * ============================================
+ */
 
 import Anthropic from '@anthropic-ai/sdk';
 import { checkAndIncrement } from './_rateLimit.js';
@@ -327,6 +350,21 @@ function injectBgmIntoGame(html, score) {
   return html;
 }
 
+// ─────────── 외부 스크립트 차단 (S-AI-01 / S19) ───────────
+// 허용 CDN: cdn.jsdelivr.net (Tone.js), fonts.googleapis.com
+// 그 외 외부 http(s) <script src="..."> 는 주석으로 대체. 프롬프트 인젝션 경유 데이터 유출 방어.
+const ALLOWED_SCRIPT_HOSTS = /^https?:\/\/(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)\//i;
+function stripDisallowedExternalScripts(html) {
+  if (!html) return html;
+  return html.replace(
+    /<script\b([^>]*?)\bsrc\s*=\s*(['"])(https?:\/\/[^'"\s>]+)\2([^>]*?)>(\s*<\/script>)?/gi,
+    (full, pre, _q, url, post) => {
+      if (ALLOWED_SCRIPT_HOSTS.test(url)) return full;
+      return `<!-- 차단된 외부 스크립트: ${url.replace(/--/g, '- -').slice(0, 200)} -->`;
+    }
+  );
+}
+
 // ─────────── 핸들러 ───────────
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -340,8 +378,10 @@ export default async function handler(req, res) {
   }
 
   const mode = body?.mode === 'tutor' ? 'tutor' : 'generator';
-  const studentId = (body?.studentId || '').trim() ||
-                    (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'anon');
+  // 요청 IP 추출 — rate limit 복합 키 보조용 (S-AUTH-01)
+  const forwardedFor = (req.headers['x-forwarded-for'] || '').toString();
+  const reqIp = forwardedFor.split(',')[0].trim() || req.socket?.remoteAddress || '';
+  const studentId = (body?.studentId || '').trim() || reqIp || 'anon';
   const userText = (body?.document || body?.text || '').trim();
   const editorContent = (body?.editorContent || '').toString().slice(0, 3000).trim();
   const musicScore = body?.musicScore && typeof body.musicScore === 'object' ? body.musicScore : null;
@@ -355,9 +395,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Rate limit
+  // Rate limit (S-AUTH-01: studentId + IP 복합 키)
   const limit = mode === 'tutor' ? 15 : 5;
-  const rl = await checkAndIncrement(mode, studentId, limit);
+  const rl = await checkAndIncrement(mode, studentId, limit, reqIp);
   if (!rl.ok) {
     res.status(429).json({
       error: 'rate_limited',
@@ -373,12 +413,18 @@ export default async function handler(req, res) {
   // Claude 호출
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'ANTHROPIC_API_KEY 미설정' });
+    // S-ERR-01: ENV 이름 노출 회피
+    res.status(500).json({ error: 'configuration_error', message: '공도쌤이 잠깐 쉬는 중이에요. 다시 시도해볼까요?' });
     return;
   }
 
   const client = new Anthropic({ apiKey });
   const systemText = mode === 'tutor' ? SYSTEM_TUTOR : SYSTEM_GENERATOR;
+
+  // S-AI-01: user input 을 XML 태그로 감싸 system prompt 경계를 명시 (prompt injection 방어)
+  const wrappedUserContent = (mode === 'tutor' && editorContent)
+    ? `[학생의 현재 바이브코딩 문서]\n<student_document>\n${editorContent}\n</student_document>\n\n[학생의 질문]\n<student_question>\n${userText}\n</student_question>`
+    : `<student_document>\n${userText}\n</student_document>`;
 
   try {
     const msg = await client.messages.create({
@@ -388,12 +434,7 @@ export default async function handler(req, res) {
         { type: 'text', text: systemText, cache_control: { type: 'ephemeral' } },
       ],
       messages: [
-        {
-          role: 'user',
-          content: (mode === 'tutor' && editorContent)
-            ? `[학생의 현재 바이브코딩 문서]\n---\n${editorContent}\n---\n\n[학생의 질문]\n${userText}`
-            : userText,
-        },
+        { role: 'user', content: wrappedUserContent },
       ],
     });
 
@@ -407,6 +448,8 @@ export default async function handler(req, res) {
       const match = raw.match(/```html\s*([\s\S]*?)```/i);
       html = match ? match[1].trim() : raw.trim();
       html = forceEmojiCharacters(html);
+      // S-AI-01: 외부 http(s) script src 제거 — 허용 CDN(jsdelivr·fonts.googleapis) 외 차단
+      html = stripDisallowedExternalScripts(html);
       if (musicScore) html = injectBgmIntoGame(html, musicScore);
     }
 

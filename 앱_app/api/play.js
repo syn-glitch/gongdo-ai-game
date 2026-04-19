@@ -1,6 +1,28 @@
-// 공도 AI-Game — /api/play (S17 v2)
-// Supabase Storage 의 학생 게임 HTML 을 올바른 Content-Type 으로 프록시 서빙
-// (Supabase public URL 은 CSP `default-src 'none'; sandbox` 로 잠겨 있어 직접 사용 불가)
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        play.js
+ * @version     v1.1.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👩‍💻 에이다 (자비스 개발팀) · 지시: 자비스 PO
+ * @ordered-by  용남 대표
+ * @description /api/play — Supabase Storage 학생 게임 HTML 프록시 서빙.
+ *              Padlet iframe 임베드 지원.
+ *
+ * @change-summary
+ *   AS-IS: CSP 헤더 부재 → 업로드 HTML 이 동일 출처에서 외부 fetch 가능 (localStorage 탈취 경로) — S-UPL-01
+ *   TO-BE: CSP 추가 default-src 'self' 기반으로 외부 도메인 fetch/XHR 차단, 게임 내부 기능(인라인 스크립트·이미지·폰트)은 유지
+ *
+ * @features
+ *   - [추가] Content-Security-Policy 헤더 — 외부 도메인 fetch/XHR 차단 (S-UPL-01)
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-19 | 에이다 | S-UPL-01 CSP 추가
+ * v1.0.0 | 2026-04-15 | 에이다 | 최초 작성 (S17 v2)
+ * ============================================
+ */
+// Supabase public URL 은 CSP `default-src 'none'; sandbox` 로 잠겨 있어 직접 사용 불가 → 우리 프록시로 서빙.
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -59,6 +81,21 @@ export default async function handler(req, res) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     // Padlet 등 외부 사이트의 iframe 임베드 허용
     res.setHeader('X-Frame-Options', 'ALLOWALL');
+    // S-UPL-01: 동일 출처 XSS 경로 봉쇄 — default-src 'self' 로 외부 fetch/XHR 차단.
+    // 인라인 스크립트·Tone.js CDN·이모지 폰트는 허용하여 학생 게임 기능 유지.
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' https: data: blob:",
+        "media-src 'self' blob: data:",
+        "connect-src 'self'",
+        "frame-ancestors *",
+      ].join('; ')
+    );
     res.end(html);
   } catch (err) {
     console.error('[play] 오류:', err?.message || err);

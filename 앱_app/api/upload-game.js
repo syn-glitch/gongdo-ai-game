@@ -1,6 +1,27 @@
-// 공도 AI-Game — /api/upload-game (S17 v2)
-// 학생 게임 HTML 을 Supabase Storage 에 업로드하고 공유 URL 반환
-// Padlet 에서 학생/친구가 URL 로 바로 플레이 가능
+/**
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        upload-game.js
+ * @version     v1.1.0
+ * @updated     2026-04-19 (KST)
+ * @agent       👩‍💻 에이다 (자비스 개발팀) · 지시: 자비스 PO
+ * @ordered-by  용남 대표
+ * @description /api/upload-game — 학생 게임 HTML → Supabase Storage → 공유 URL 반환.
+ *              Padlet iframe 임베드용 /api/play?id= 프록시 경로 사용.
+ *
+ * @change-summary
+ *   AS-IS: studentId 단일 키 rate limit
+ *   TO-BE: studentId + IP 복합 키 rate limit (S-AUTH-01)
+ *
+ * @features
+ *   - [수정] checkAndIncrement 에 IP 전달
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-19 | 에이다 | S-AUTH-01 IP 복합 키
+ * v1.0.0 | 2026-04-15 | 에이다 | 최초 작성 (S17 v2)
+ * ============================================
+ */
 
 import { createClient } from '@supabase/supabase-js';
 import { checkAndIncrement } from './_rateLimit.js';
@@ -27,8 +48,10 @@ export default async function handler(req, res) {
   }
 
   const html = (body?.html || '').toString();
-  const studentId = (body?.studentId || '').trim() ||
-                    (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'anon');
+  // S-AUTH-01: IP 추출 rate limit 복합 키 보조
+  const forwardedFor = (req.headers['x-forwarded-for'] || '').toString();
+  const reqIp = forwardedFor.split(',')[0].trim() || req.socket?.remoteAddress || '';
+  const studentId = (body?.studentId || '').trim() || reqIp || 'anon';
   const title = (body?.title || '').toString().slice(0, 60);
   const tagline = (body?.tagline || '').toString().slice(0, 200);
   const lessonNo = Number(body?.lessonNo) || null;
@@ -44,8 +67,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  // rate limit (학생당 시간당 5개 게임 업로드)
-  const rl = await checkAndIncrement('upload', studentId, 5);
+  // rate limit (학생당 시간당 5개 게임 업로드 — S-AUTH-01: studentId + IP 복합 키)
+  const rl = await checkAndIncrement('upload', studentId, 5, reqIp);
   if (!rl.ok) {
     res.status(429).json({
       error: 'rate_limited',
