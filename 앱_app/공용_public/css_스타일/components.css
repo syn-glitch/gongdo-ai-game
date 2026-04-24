@@ -278,22 +278,31 @@
 
 .character-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.character-grid li {
+  display: flex;
 }
 
 .character-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-2);
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 18px 12px 12px;
   background: var(--color-cream-deep);
   border: 2px solid var(--color-brown-soft);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease);
-  min-height: 100px;
+  min-height: 204px;
 }
 .character-card:hover {
   background: var(--color-yellow);
@@ -313,8 +322,10 @@
 }
 
 .character-img {
-  width: 56px;
-  height: 56px;
+  width: 102px;
+  height: 102px;
+  margin-top: 10px;
+  margin-bottom: 8px;
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
 }
@@ -354,10 +365,15 @@
   font-size: var(--fs-md);
   font-weight: 800;
   color: var(--color-brown);
+  line-height: 1.1;
+  margin-top: auto;
+  text-align: center;
 }
 .character-desc {
   font-size: 11px;
   color: var(--color-brown-soft);
+  text-align: center;
+  line-height: 1.25;
 }
 
 .character-popover-footnote {
