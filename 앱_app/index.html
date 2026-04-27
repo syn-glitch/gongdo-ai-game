@@ -1,3 +1,31 @@
+<!--
+ ============================================
+ 📋 배포 이력 (Deploy Header)
+ ============================================
+ @file        index.html
+ @version     v1.1.0
+ @updated     2026-04-27 (KST)
+ @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 사이클 결정 반영)
+ @ordered-by  용남 대표
+ @description 공도 AI-Game 앱 메인 — 도구바 [👤 캐릭터] 잠금 게이트 + [🔓 캐릭터 활성화하기] +
+              키워드 활성화 모달 + 768px 이하 PC 안내 배너 + 캐릭터 활성화 토스트 추가.
+
+ @change-summary
+   AS-IS: [👤 캐릭터] 즉시 활성, 모든 차시에서 캐릭터 즉시 사용 가능
+   TO-BE: [👤 캐릭터] 글로벌 비활성(🔒) + 키워드 "ㅋㅋ도와줘" 입력 시 활성. in-memory 영속성 (대표 2차 결정 🅱️).
+
+ @features
+   - [추가] 도구바 [🔓 캐릭터 활성화하기] 버튼 (B-1)
+   - [추가] 캐릭터 활성화 모달 — `<dialog>` 시멘틱 + IME compositionend 검증 (B-2, B-6)
+   - [수정] [👤 캐릭터] 버튼 wrapper + 🔒/👤 아이콘 토글 (B-4, B-5)
+   - [추가] 캐릭터 활성화 토스트 (B-7) + readonly 안내 토스트 (B-10)
+   - [추가] 768px 이하 PC 안내 배너 (B-11, M5)
+
+ ── 변경 이력 ──────────────────────────
+ v1.1.0 | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea) (JARVIS-2026-04-27-001 v1.0.0 + 대표 2차 결정)
+ v1.0.0 | 이전        | 클로이 | 최초 작성 (S02~S17)
+ ============================================
+-->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -67,8 +95,13 @@
           <button type="button" class="toolbar-btn" id="btn-code-view" aria-label="진짜 코드 구경하기" aria-expanded="false" aria-controls="code-view-overlay" hidden>
             <span aria-hidden="true">🔍</span> <span class="toolbar-btn-label">코드 구경</span>
           </button>
-          <button type="button" class="toolbar-btn" id="btn-character" aria-label="캐릭터 넣기" aria-expanded="false" aria-controls="character-popover">
-            <span aria-hidden="true">👤</span> <span class="toolbar-btn-label">캐릭터</span>
+          <span class="toolbar-btn-wrapper" id="btn-character-wrapper">
+            <button type="button" class="toolbar-btn is-locked" id="btn-character" aria-label="캐릭터 넣기 (잠김)" aria-expanded="false" aria-controls="character-popover" disabled title="선생님이 알려주실 때 켜요">
+              <span class="character-lock-icon" aria-hidden="true">🔒</span><span class="character-icon" aria-hidden="true" hidden>👤</span> <span class="toolbar-btn-label">캐릭터</span>
+            </button>
+          </span>
+          <button type="button" class="toolbar-btn toolbar-btn-unlock" id="btn-character-unlock" aria-label="캐릭터 활성화하기" aria-haspopup="dialog">
+            <span aria-hidden="true">🔓</span> <span class="toolbar-btn-label">캐릭터 활성화하기</span>
           </button>
           <button type="button" class="toolbar-btn" id="btn-theme" aria-label="배경 고르기" aria-expanded="false" aria-controls="theme-popover">
             <span aria-hidden="true">🎨</span> <span class="toolbar-btn-label">배경</span>
@@ -467,6 +500,35 @@
       </div>
       <p class="modal-footnote">버튼이 저절로 다시 켜져요</p>
     </div>
+  </div>
+
+  <!-- JARVIS-2026-04-27-001: 캐릭터 활성화 키워드 모달 -->
+  <div id="character-unlock-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="character-unlock-title" aria-describedby="character-unlock-desc">
+    <div class="modal-card character-unlock-card">
+      <div class="modal-emoji" aria-hidden="true">🔓</div>
+      <h2 id="character-unlock-title" class="modal-title">캐릭터 활성화</h2>
+      <p id="character-unlock-desc" class="modal-desc">선생님이 알려주신 키워드를 입력해보세요!</p>
+      <form id="character-unlock-form" class="character-unlock-form" autocomplete="off">
+        <label for="character-unlock-input" class="sr-only">캐릭터 활성화 키워드</label>
+        <input type="text" id="character-unlock-input" class="character-unlock-input"
+               inputmode="text" maxlength="40"
+               placeholder="키워드를 입력해주세요" aria-describedby="character-unlock-error">
+        <p id="character-unlock-error" class="character-unlock-error" hidden role="alert">다시 한번 입력해보세요</p>
+        <div class="character-unlock-actions">
+          <button type="button" class="btn btn-ghost" id="character-unlock-cancel">취소</button>
+          <button type="submit" class="btn btn-primary" id="character-unlock-confirm" disabled>확인</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JARVIS-2026-04-27-001: 토스트 영역 (활성화 성공 / readonly 안내) -->
+  <div id="character-toast" class="character-toast" hidden role="status" aria-live="polite"></div>
+
+  <!-- JARVIS-2026-04-27-001: 768px 이하 안내 배너 (PC ≥1024px 기준) -->
+  <div id="narrow-screen-banner" class="narrow-screen-banner" role="alert" hidden>
+    <span aria-hidden="true">💻</span>
+    <span class="narrow-screen-banner-text">PC 에서 접속해주세요</span>
   </div>
 
   <footer class="app-footer" role="contentinfo">

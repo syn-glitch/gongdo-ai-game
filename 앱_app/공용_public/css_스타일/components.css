@@ -1,6 +1,21 @@
 /*
- * 공도 AI-Game — 카툰 스타일 컴포넌트
- * 버튼, 모달, 드로어 아이템, 튜터 메시지 등
+ * ============================================
+ * 📋 배포 이력 (Deploy Header)
+ * ============================================
+ * @file        components.css
+ * @version     v1.1.0
+ * @updated     2026-04-27 (KST)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 결정 반영)
+ * @ordered-by  용남 대표
+ * @description 공도 AI-Game 카툰 스타일 컴포넌트 — 버튼, 모달, 드로어, 튜터 메시지 등.
+ *              v1.1.0 캐릭터 활성화 게이트 UI 추가 (잠금 시각, 모달, 토스트, PC 안내 배너,
+ *              #editor-textarea readonly 잠금 시각).
+ *
+ * ── 변경 이력 ──────────────────────────
+ * v1.1.0 | 2026-04-27 | 클로이 | 캐릭터 잠금/활성/언락 모달/토스트/PC 안내 배너/에디터 readonly 시각
+ *                                (JARVIS-2026-04-27-001 + 대표 2차 결정)
+ * v1.0.0 | 이전        | 클로이 | 최초 작성
+ * ============================================
  */
 
 /* ─────── 버튼 ─────── */
@@ -1611,3 +1626,165 @@ x-k { color: var(--color-brown); font-weight: 800; }
   0%, 100% { transform: rotate(-5deg) scale(1); }
   50% { transform: rotate(5deg) scale(1.1); }
 }
+
+/* =====================================================================
+ * JARVIS-2026-04-27-001 — 캐릭터 활성화 게이트 (B-11)
+ * 적용 기준: PC ≥1024px (768px 이하는 안내 배너로 유도)
+ * 대표 2차 결정 반영: in-memory 영속성 / #editor-textarea 자동 입력
+ * ===================================================================== */
+
+/* [👤 캐릭터] 버튼 wrapper — disabled 상태에서도 click 캡처 가능 */
+.toolbar-btn-wrapper {
+  display: inline-flex;
+  position: relative;
+}
+
+/* 비활성(잠금) 상태 시각: 회색 + 🔒
+   disabled 인 button 은 click 이벤트를 dispatch 하지 않으므로,
+   pointer-events: none 으로 클릭을 wrapper 까지 전달 → wrapper 가 모달 open */
+.toolbar-btn.is-locked {
+  background: var(--color-gray-100, #e5e5e5);
+  color: var(--color-gray-500, #6b6b6b);
+  border-color: var(--color-gray-500, #6b6b6b);
+  opacity: 0.85;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.toolbar-btn-wrapper:has(.is-locked) {
+  cursor: pointer;
+}
+.toolbar-btn.is-locked:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-toon-sm);
+  background: var(--color-gray-100, #e5e5e5);
+}
+.toolbar-btn.is-locked .character-lock-icon {
+  display: inline-block;
+  filter: grayscale(0.2);
+}
+
+/* 활성화 트리거 버튼 */
+.toolbar-btn-unlock {
+  background: var(--color-red);
+  color: var(--color-cream);
+  animation: unlock-pulse 1.8s ease-in-out infinite;
+}
+.toolbar-btn-unlock:hover {
+  background: var(--color-red-dark, #c43a2a);
+  color: var(--color-cream);
+}
+.toolbar-btn-unlock[hidden] { display: none !important; }
+
+@keyframes unlock-pulse {
+  0%, 100% { box-shadow: var(--shadow-toon-sm); }
+  50%      { box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.25), var(--shadow-toon-sm); }
+}
+
+/* ─────── 캐릭터 활성화 모달 ─────── */
+.character-unlock-card {
+  max-width: 420px;
+  text-align: center;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+
+.character-unlock-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.character-unlock-input {
+  width: 100%;
+  padding: var(--space-3);
+  border: var(--outline-width) solid var(--outline-color);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  background: var(--color-cream);
+  color: var(--color-brown);
+  text-align: center;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease),
+              box-shadow var(--dur-fast) var(--ease);
+}
+.character-unlock-input:focus {
+  border-color: var(--color-red);
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+}
+
+.character-unlock-error {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-red);
+  font-weight: 700;
+}
+
+.character-unlock-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+/* ─────── 캐릭터 토스트 (활성화 성공 / readonly 안내) ─────── */
+.character-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translate(-50%, -16px);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  border: var(--outline-width) solid var(--outline-color);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  box-shadow: var(--shadow-toon);
+  z-index: 9000;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease),
+              transform var(--dur-fast) var(--ease);
+  pointer-events: none;
+}
+.character-toast.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.character-toast[hidden] { display: none; }
+
+/* ─────── #editor-textarea readonly 잠금 시각 (대표 결정 1: editor-textarea 사용) ─────── */
+.editor-textarea.is-locked-prompt {
+  background: var(--color-cream-deep, #f5e9d4);
+  color: var(--color-brown);
+  font-weight: 700;
+  cursor: default;
+  caret-color: transparent;
+}
+
+/* ─────── 768px 이하 PC 안내 배너 (M5) ─────── */
+.narrow-screen-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-yellow);
+  color: var(--color-brown);
+  border-bottom: var(--outline-width) solid var(--outline-color);
+  font-weight: 800;
+  font-size: var(--fs-md);
+  box-shadow: var(--shadow-toon-sm);
+}
+.narrow-screen-banner[hidden] { display: none; }
+
+@media (max-width: 768px) {
+  /* 안내 배너 표시 시 main 컨텐츠가 가려지지 않도록 헤더 보정 */
+  body.is-narrow-screen .app-header { margin-top: 56px; }
+}
+

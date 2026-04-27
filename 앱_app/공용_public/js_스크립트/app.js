@@ -3,22 +3,30 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.8.2
- * @updated     2026-04-19 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (대표 직접)
+ * @version     v1.9.0
+ * @updated     2026-04-27 (KST)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 결정 반영)
  * @ordered-by  용남 대표
- * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동.
+ * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동,
+ *              캐릭터 활성화 게이트 (in-memory 변수 — sessionStorage/localStorage 미사용).
  *
  * @change-summary
- *   AS-IS: v1.8.1 — "장르" 매핑 의미 모호 + 매칭 실패 시 일반 안내 (학습 효과 약함)
- *   TO-BE: v1.8.2 — "장르" [🔍 코드] 버튼 hide + 섹션별 친절 안내 사전 (퀴즈 풍 학습 유도)
+ *   AS-IS: v1.8.2 — [👤 캐릭터] 즉시 활성, 모든 차시에서 캐릭터 즉시 사용 가능
+ *   TO-BE: v1.9.0 — [👤 캐릭터] 글로벌 비활성(🔒) + "ㅋㅋ도와줘" 키워드 활성화 + IP 자동 입력
+ *                  (#editor-textarea 에 readonly 자동 입력, [▶ 시작] 후 setTimeout 0 으로 비움+해제)
  *
  * @features
- *   - [수정] renderMarkdownLite() — '장르' 헤딩에는 [🔍 코드] 버튼 미생성
- *   - [추가] FALLBACK_MESSAGES 사전 — 섹션별 차별 안내 (규칙·조작 방법·배경·주인공·적)
- *   - [수정] highlightCodeSection() Fallback 분기 — 사전 우선 검색, 없으면 일반 안내
+ *   - [추가] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` 변수 (대표 2차 결정 🅱️)
+ *           sessionStorage / localStorage 절대 미사용. F5 = 모듈 재로드 = 자동 초기화.
+ *   - [추가] 활성화 모달 — IME compositionend 처리 (m6) + ESC/백드롭/취소 동작 통합 (m1)
+ *   - [추가] IP 자동 입력 매핑 (kk/tory/bob/leon) → #editor-textarea readonly + [▶ 시작] 후 비움/해제 (B-10/M2)
+ *   - [추가] 캐릭터 토스트 — 활성화 성공 / readonly 안내 메시지
+ *   - [추가] 768px 이하 화면 안내 배너 (M5)
+ *   - [수정] selectLesson — SPA 차시 전환 시 refreshCharacterButtonState 호출 (m5, 메모리 변수 보존)
+ *   - [수정] handleStartClick — IP readonly 마킹 시 setTimeout 0 으로 비움+해제
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.9.0 | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea, in-memory)
  * v1.8.2 | 2026-04-19 | 클로이 | "장르" 버튼 hide + 섹션별 Fallback 안내 사전 (대표 정리)
  * v1.8.1 | 2026-04-19 | 클로이 | Fallback 잔존 fix + 코드 영역 inline info (QA-006 MAJOR-1, MINOR-3)
  * v1.8.0 | 2026-04-19 | 클로이 | 항목별 [🔍 코드] 버튼 + 부분 하이라이트 (PRD 생략 Fast-Track)
@@ -236,6 +244,8 @@
       await loadLessonFile(fileToLoad);
       renderVariantPanel(lessonMeta);
       refreshCodeViewBtnVisibility();   // BUNKER-003 FR-3: 1·2·3차시만 노출
+      // JARVIS-2026-04-27-001 (m5): SPA 차시 전환 시 캐릭터 버튼 상태 동기화 — in-memory 변수만 참조
+      if (typeof refreshCharacterButtonState === 'function') refreshCharacterButtonState();
       editor.focus();
       $('#game-status').textContent =
         `${lessonNo}차시 문서가 열렸어요. 수정한 뒤 [시작]을 눌러봐요!`;
@@ -861,12 +871,23 @@
     });
   }
 
-  // ─────────── 반응형 탭 모드 ───────────
+  // ─────────── 반응형 탭 모드 + 768px 이하 PC 안내 배너 (JARVIS-2026-04-27-001 M5) ───────────
   function initResponsive() {
     const mql = window.matchMedia('(max-width: 1024px)');
     const apply = () => document.body.classList.toggle('is-tab-mode', mql.matches);
     apply();
     mql.addEventListener('change', apply);
+
+    // M5: 768px 이하 진입 시 화면 상단 안내 배너 노출
+    const narrowMql = window.matchMedia('(max-width: 768px)');
+    const banner = $('#narrow-screen-banner');
+    const applyBanner = () => {
+      if (!banner) return;
+      banner.hidden = !narrowMql.matches;
+      document.body.classList.toggle('is-narrow-screen', narrowMql.matches);
+    };
+    applyBanner();
+    narrowMql.addEventListener('change', applyBanner);
   }
 
   // ─────────── 팝오버 공통 헬퍼 ───────────
@@ -1346,16 +1367,276 @@
     });
   }
 
-  // ─────────── 캐릭터 패널 (S10) ───────────
+  // ─────────── 캐릭터 패널 (S10 + JARVIS-2026-04-27-001 활성화 게이트) ───────────
+  // 모든 차시(1·2·3·4) 기본 비활성. "ㅋㅋ도와줘" 키워드 입력 시 in-memory 활성화.
+  //
+  // ★ 영속성 정책 (대표 2차 결정 🅱️):
+  //   - in-memory 클로저 변수 `_characterUnlocked` 만 사용
+  //   - sessionStorage / localStorage 둘 다 절대 사용 금지
+  //   - F5 새로고침 = 모듈 재로드 = 자동 false → 키워드 재입력 요구
+  //   - SPA 차시 전환 = 페이지 이동 X = 메모리 보존 → 1·3·4차시 오가도 활성 유지
+  const CHAR_UNLOCK_KEYWORD = 'ㅋㅋ도와줘';   // 단일 진실 원천
+
+  // IP 자동 입력 매핑 — sub_task JARVIS-2026-04-27-001 v1.0 본문 그대로
+  // (상대 경로 vs 절대 URL 비결정성은 김감사 Phase C QA-007 매트릭스에서 검증)
+  const IP_PROMPTS = {
+    kk:   '주인공을 ㅋㅋ로 바꿔줘. ㅋㅋ 일러스트 이미지(./에셋_assets/캐릭터_characters/kk_idle.png)를 그대로 사용해줘.',
+    tory: '주인공을 토리로 바꿔줘. 토리 일러스트 이미지(./에셋_assets/캐릭터_characters/tory_idle.png)를 그대로 사용해줘.',
+    bob:  '주인공을 밥으로 바꿔줘. 밥 일러스트 이미지(./에셋_assets/캐릭터_characters/bob_idle.png)를 그대로 사용해줘.',
+    leon: '주인공을 레옹으로 바꿔줘. 레옹 일러스트 이미지(./에셋_assets/캐릭터_characters/leon_idle.png)를 그대로 사용해줘.',
+  };
+
+  // ── in-memory 영속성 (대표 2차 결정 🅱️) ──
+  let _characterUnlocked = false;
+  let _charUnlockComposing = false;
+  let _charToastTimer = null;
+
+  function isCharacterUnlocked() { return _characterUnlocked === true; }
+  function setCharacterUnlocked(value) { _characterUnlocked = (value === true); }
+
+  function refreshCharacterButtonState() {
+    const btn = $('#btn-character');
+    const unlockBtn = $('#btn-character-unlock');
+    const lockIcon = btn ? btn.querySelector('.character-lock-icon') : null;
+    const charIcon = btn ? btn.querySelector('.character-icon') : null;
+    if (!btn) return;
+    const unlocked = isCharacterUnlocked();
+    btn.disabled = !unlocked;
+    btn.classList.toggle('is-locked', !unlocked);
+    btn.setAttribute('aria-label', unlocked ? '캐릭터 넣기' : '캐릭터 넣기 (잠김)');
+    if (unlocked) btn.removeAttribute('title');
+    else btn.setAttribute('title', '선생님이 알려주실 때 켜요');
+    if (lockIcon) lockIcon.hidden = unlocked;
+    if (charIcon) charIcon.hidden = !unlocked;
+    if (unlockBtn) unlockBtn.hidden = unlocked;
+    // 비활성으로 전환되는 경우 popover 도 닫기
+    if (!unlocked) {
+      const popover = $('#character-popover');
+      if (popover) {
+        popover.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  }
+
+  // ─────────── 활성화 모달 (B-2 / B-5 / B-6 / B-7) ───────────
+  function openCharacterUnlockModal() {
+    const modal = $('#character-unlock-modal');
+    const input = $('#character-unlock-input');
+    const error = $('#character-unlock-error');
+    const confirmBtn = $('#character-unlock-confirm');
+    if (!modal) return;
+    modal.hidden = false;
+    if (error) error.hidden = true;
+    if (input) input.value = '';
+    if (confirmBtn) confirmBtn.disabled = true;
+    _charUnlockComposing = false;
+    // 첫 진입 입력란 자동 포커스
+    setTimeout(() => input && input.focus(), 30);
+  }
+
+  function closeCharacterUnlockModalAndReset() {
+    const modal = $('#character-unlock-modal');
+    const input = $('#character-unlock-input');
+    const error = $('#character-unlock-error');
+    if (input) input.value = '';
+    if (error) error.hidden = true;
+    if (modal) modal.hidden = true;
+  }
+
+  function handleCharacterUnlockConfirm() {
+    if (_charUnlockComposing) return;     // IME 조합 중 무시 (m6)
+    const input = $('#character-unlock-input');
+    const error = $('#character-unlock-error');
+    if (!input) return;
+    const normalized = (input.value || '').trim().replace(/\s+/g, '');
+    if (normalized === CHAR_UNLOCK_KEYWORD) {
+      // 성공
+      setCharacterUnlocked(true);
+      closeCharacterUnlockModalAndReset();
+      refreshCharacterButtonState();
+      showCharacterToast('✨ 활성화 되었습니다');
+    } else {
+      // 실패 — 모달 유지 + inline 안내 + 입력값 유지
+      if (error) {
+        error.hidden = false;
+        error.textContent = normalized.length === 0
+          ? '키워드를 입력해보세요'
+          : '다시 한번 입력해보세요';
+      }
+      input.focus();
+      input.select && input.select();
+    }
+  }
+
+  // ─────────── 토스트 (B-7 활성화 / B-10 readonly 안내) ───────────
+  function showCharacterToast(text) {
+    const toast = $('#character-toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.hidden = false;
+    toast.classList.remove('is-shown');
+    void toast.offsetWidth;     // 강제 리플로우 → 재애니메이션
+    toast.classList.add('is-shown');
+    if (_charToastTimer) clearTimeout(_charToastTimer);
+    _charToastTimer = setTimeout(() => {
+      toast.classList.remove('is-shown');
+      setTimeout(() => { toast.hidden = true; }, 220);
+    }, 2200);
+  }
+
+  // ─────────── IP 자동 입력 (B-9 / B-10) — 대표 2차 결정 🅱️ ───────────
+  // 채팅 입력창 = 바이브코딩 문서 에디터 (#editor-textarea). [전송] = [▶ 시작] (#btn-start).
+  function applyIpPrompt(charKey) {
+    const text = IP_PROMPTS[charKey];
+    if (!text) return;
+    const editor = $('#editor-textarea');
+    if (!editor) return;
+    editor.value = text;
+    editor.readOnly = true;
+    editor.classList.add('is-locked-prompt');
+    editor.dataset.lockedPrompt = '1';
+    try { editor.setSelectionRange(text.length, text.length); } catch (_) {}
+    editor.focus();
+  }
+
+  // [▶ 시작] 클릭 후 readonly 해제 + value 비우기 (대표 결정 1 명세 그대로)
+  function unlockEditorAfterStart() {
+    const editor = $('#editor-textarea');
+    if (!editor) return;
+    if (editor.dataset.lockedPrompt === '1') {
+      editor.value = '';
+      editor.readOnly = false;
+      editor.classList.remove('is-locked-prompt');
+      delete editor.dataset.lockedPrompt;
+    }
+  }
+
   function initCharacterPanel() {
     const p = setupPopover({ btnId: 'btn-character', popoverId: 'character-popover', closeId: 'character-popover-close' });
     if (!p) return;
+
+    // ── 4 IP 셀 클릭 → 자동 입력 (B-9 / B-10) ──
     $$('.character-card').forEach((card) => {
       card.addEventListener('click', () => {
-        insertCharacterIntoDoc(card.dataset.label, card.dataset.file);
+        const key = card.dataset.char;
+        if (key && IP_PROMPTS[key]) {
+          applyIpPrompt(key);
+        } else {
+          // 폴백: 기존 동작 유지 (S10 직접 문서 삽입)
+          insertCharacterIntoDoc(card.dataset.label, card.dataset.file);
+        }
         p.toggle(false);
       });
     });
+
+    // ── 진입로 1: [🔓 캐릭터 활성화하기] (B-5) ──
+    const unlockBtn = $('#btn-character-unlock');
+    if (unlockBtn) {
+      unlockBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCharacterUnlockModal();
+      });
+    }
+
+    // ── 진입로 2: 비활성 [👤 캐릭터] 클릭 → 모달 자동 open (B-5, M4) ──
+    // disabled 버튼은 click 발생 X → CSS pointer-events:none + wrapper 가 click 받음
+    const wrapper = $('#btn-character-wrapper');
+    if (wrapper) {
+      wrapper.addEventListener('click', (e) => {
+        if (!isCharacterUnlocked()) {
+          e.preventDefault();
+          e.stopPropagation();
+          openCharacterUnlockModal();
+        }
+      }, true);
+    }
+
+    // ── 모달 IME / 검증 / 닫기 (B-6, B-7, m1, m6) ──
+    const form = $('#character-unlock-form');
+    const input = $('#character-unlock-input');
+    const cancelBtn = $('#character-unlock-cancel');
+    const confirmBtn = $('#character-unlock-confirm');
+    const modal = $('#character-unlock-modal');
+    const errorEl = $('#character-unlock-error');
+
+    if (input) {
+      input.addEventListener('compositionstart', () => {
+        _charUnlockComposing = true;
+        if (confirmBtn) confirmBtn.disabled = true;
+      });
+      input.addEventListener('compositionend', () => {
+        _charUnlockComposing = false;
+        if (confirmBtn) confirmBtn.disabled = input.value.length === 0;
+      });
+      input.addEventListener('input', () => {
+        if (errorEl && !errorEl.hidden) errorEl.hidden = true;
+        if (!_charUnlockComposing && confirmBtn) {
+          confirmBtn.disabled = input.value.length === 0;
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          if (_charUnlockComposing) return;     // IME 조합 중 Enter 무시
+          e.preventDefault();
+          handleCharacterUnlockConfirm();
+        }
+      });
+    }
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleCharacterUnlockConfirm();
+      });
+    }
+    if (cancelBtn) cancelBtn.addEventListener('click', closeCharacterUnlockModalAndReset);
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeCharacterUnlockModalAndReset();
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && !modal.hidden) {
+        closeCharacterUnlockModalAndReset();
+      }
+    });
+
+    // ── readonly 인 상태에서 학생이 #editor-textarea 타이핑 시도 시 안내 토스트 (B-10) ──
+    const editor = $('#editor-textarea');
+    if (editor) {
+      editor.addEventListener('beforeinput', () => {
+        if (editor.readOnly && editor.dataset.lockedPrompt === '1') {
+          showCharacterToast('이 문장은 그대로 보내주세요!');
+        }
+      });
+      editor.addEventListener('keydown', (e) => {
+        if (editor.readOnly && editor.dataset.lockedPrompt === '1') {
+          // 네비게이션 / 단축키는 통과
+          if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape'
+              || e.key === 'ArrowLeft' || e.key === 'ArrowRight'
+              || e.key === 'ArrowUp' || e.key === 'ArrowDown'
+              || e.key === 'Home' || e.key === 'End'
+              || e.key === 'PageUp' || e.key === 'PageDown'
+              || (e.metaKey || e.ctrlKey)) return;
+          // 인쇄 가능한 키 입력 시도 → 안내
+          if (e.key && e.key.length === 1) {
+            showCharacterToast('이 문장은 그대로 보내주세요!');
+          }
+        }
+      });
+    }
+
+    // ── [▶ 시작] 클릭 → 자동 비움 + readonly 해제 (대표 결정 1) ──
+    // handleStartClick 의 인자 평가는 동기적으로 즉시 일어남 → setTimeout 0 으로 비워도 안전
+    const btnStart = $('#btn-start');
+    if (btnStart) {
+      btnStart.addEventListener('click', () => {
+        setTimeout(unlockEditorAfterStart, 0);
+      });
+    }
+
+    // ── 초기 상태 동기화 (B-4) ──
+    refreshCharacterButtonState();
   }
 
   // ─────────── 배경 테마 패널 (S11) ───────────
