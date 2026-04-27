@@ -3,26 +3,29 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.10.0
+ * @version     v1.11.0
  * @updated     2026-04-27 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (3차 핫픽스 — 김감사 v2.0 진단 CRITICAL-3 차단)
- * @ordered-by  용남 대표
+ * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리 (deploy_header + selectLesson 검증)
+ * @ordered-by  용남 대표 (9차 지시 — A안 5개 모두 채택)
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동,
  *              캐릭터 활성화 게이트 (in-memory 변수 — sessionStorage/localStorage 미사용).
  *
  * @change-summary
- *   AS-IS: v1.9.0 — IP_PROMPTS 가 상대 경로(./에셋_assets/...) → iframe srcdoc PNG 로드 실패 (CRITICAL-3)
- *   TO-BE: v1.10.0 — IP_PROMPTS 절대 URL 변환 (chat.js line 186 경고문 + line 228~233 매핑표 정합)
+ *   AS-IS: v1.10.0 — IP 셀 클릭 시 textarea 전체 덮어쓰기 + readonly (사용자 의도와 정반대)
+ *   TO-BE: v1.11.0 — applyIpPrompt 재설계 = "- 주인공:" 라인만 in-place patch + mirror div 노란 하이라이트 + readonly 폐기
  *
  * @features
- *   - [핫픽스 #1] IP_PROMPTS 4개 키 절대 URL 변환 — `https://gongdo-ai-game.vercel.app/에셋_assets/...`
- *                IP_ASSET_BASE 상수로 일원화. chat.js v1.6.0 안전 추출 핫픽스와 동시 배포.
- *   - [유지] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` 변수 (대표 2차 결정 🅱️)
- *   - [유지] 활성화 모달 — IME compositionend 처리 (m6) + ESC/백드롭/취소 동작 통합 (m1)
- *   - [유지] IP 자동 입력 매핑 → #editor-textarea readonly + [▶ 시작] 후 비움/해제 (B-10/M2)
- *   - [유지] 캐릭터 토스트, 768px 이하 화면 안내 배너 (M5), selectLesson hook (m5)
+ *   - [재설계] applyIpPrompt — IP_META + HERO_LINE_PATTERN 정규식으로 "- 주인공: X" 라인만 in-place patch
+ *                 lesson 본문 (적/배경/색상/효과 등) 모두 유지. 4차시 모든 lesson 동일 동작.
+ *   - [신규] highlightHeroLine — mirror div + <mark> 기법으로 변경 라인에 노란 배경 (영구 유지)
+ *   - [신규] clearHeroHighlight — selectLesson 안에 호출 (차시 전환 시 잔재 정리)
+ *   - [폐기] readonly 잠금 — B-10 / M2 의 dataset.lockedPrompt / unlockEditorAfterStart / 타이핑 안내 토스트 모두 제거
+ *   - [유지] IP_META 4 키 절대 URL (chat.js v1.6.0 매핑표 정합, CRITICAL-3 차단 유지)
+ *   - [유지] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` (대표 5차 결정)
+ *   - [유지] 활성화 모달 IME / ESC / 백드롭 / 취소 / 768px 안내 배너 / selectLesson hook
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.11.0 | 2026-04-27 | 클로이 4차 + 송PO 마무리 | applyIpPrompt 재설계 (in-place patch + mirror highlight + readonly 폐기) — 대표 9차 지시 A안 채택
  * v1.10.0 | 2026-04-27 | 클로이 | 핫픽스 #1 — IP_PROMPTS 절대 URL 변환 (CRITICAL-3 차단, 김감사 v2.0)
  * v1.9.0  | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea, in-memory)
  * v1.8.2 | 2026-04-19 | 클로이 | "장르" 버튼 hide + 섹션별 Fallback 안내 사전 (대표 정리)
@@ -1390,16 +1393,21 @@
   //   - SPA 차시 전환 = 페이지 이동 X = 메모리 보존 → 1·3·4차시 오가도 활성 유지
   const CHAR_UNLOCK_KEYWORD = 'ㅋㅋ도와줘';   // 단일 진실 원천
 
-  // IP 자동 입력 매핑 — chat.js v1.5.0 매핑표(line 228~233) 절대 URL 형식과 정합.
-  // 김감사 v2.0 진단 CRITICAL-3: 상대 경로(./에셋_assets/...)는 iframe srcdoc 에서 작동 X.
-  // chat.js line 186 의 명시 경고(상대 경로 임의 사용 금지)에 맞춰 핫픽스 #1 절대 URL 로 전환.
+  // IP 메타 — 4차 사이클 E-1: lesson 본문 hero line 만 in-place patch 위해 분리.
+  // chat.js v1.5.0 매핑표(line 228~233) 절대 URL 형식과 정합 (CRITICAL-3 차단).
   const IP_ASSET_BASE = 'https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters';
-  const IP_PROMPTS = {
-    kk:   `주인공을 ㅋㅋ로 바꿔줘. ㅋㅋ 일러스트 이미지(${IP_ASSET_BASE}/kk_idle.png)를 그대로 사용해줘.`,
-    tory: `주인공을 토리로 바꿔줘. 토리 일러스트 이미지(${IP_ASSET_BASE}/tory_idle.png)를 그대로 사용해줘.`,
-    bob:  `주인공을 밥으로 바꿔줘. 밥 일러스트 이미지(${IP_ASSET_BASE}/bob_idle.png)를 그대로 사용해줘.`,
-    leon: `주인공을 레옹으로 바꿔줘. 레옹 일러스트 이미지(${IP_ASSET_BASE}/leon_idle.png)를 그대로 사용해줘.`,
+  const IP_META = {
+    kk:   { name: 'ㅋㅋ',  url: `${IP_ASSET_BASE}/kk_idle.png` },
+    tory: { name: '토리',  url: `${IP_ASSET_BASE}/tory_idle.png` },
+    bob:  { name: '밥',    url: `${IP_ASSET_BASE}/bob_idle.png` },
+    leon: { name: '레옹',  url: `${IP_ASSET_BASE}/leon_idle.png` },
   };
+  // 정규식: lesson1·2·1_catch·1_jump 모두 매치
+  //   lesson1:        `- 주인공: 파란 우주선`
+  //   lesson1_catch:  `- 주인공: ㅋㅋ`
+  //   lesson2:        `- 주인공: 토리`
+  // 그룹: $1=prefix("- 주인공: "), $2=기존 이름, $3=옵션(이전 patch 의 (이미지: ...) — 누적 방지)
+  const HERO_LINE_PATTERN = /^(- 주인공:\s*)([^\n(]*?)(\s*\(이미지:[^)]*\))?\s*$/m;
 
   // ── in-memory 영속성 (대표 2차 결정 🅱️) ──
   let _characterUnlocked = false;
@@ -1500,45 +1508,131 @@
     }, 2200);
   }
 
-  // ─────────── IP 자동 입력 (B-9 / B-10) — 대표 2차 결정 🅱️ ───────────
-  // 채팅 입력창 = 바이브코딩 문서 에디터 (#editor-textarea). [전송] = [▶ 시작] (#btn-start).
+  // ─────────── IP 자동 입력 — 4차 사이클 E-2 재설계 ───────────
+  // 사용자 의도 (대표 9차 지시): lesson 본문 전체 유지 + "- 주인공:" 라인만 in-place patch.
+  // readonly 잠금 폐기 (학생 자유 편집 가능). 노란 하이라이트 영구 유지.
+  //
+  // 누적 방지: 정규식 그룹 $3 가 이전 patch 의 `(이미지: ...)` 옵션 캡쳐 →
+  // 새 IP 로 덮어쓰기 시 자연스럽게 교체. 4 IP 연속 클릭해도 마지막 1개만 hero line 에 남음.
   function applyIpPrompt(charKey) {
-    const text = IP_PROMPTS[charKey];
-    if (!text) return;
+    const meta = IP_META[charKey];
+    if (!meta) return;
     const editor = $('#editor-textarea');
     if (!editor) return;
-    editor.value = text;
-    editor.readOnly = true;
-    editor.classList.add('is-locked-prompt');
-    editor.dataset.lockedPrompt = '1';
-    try { editor.setSelectionRange(text.length, text.length); } catch (_) {}
+
+    const before = editor.value;
+    if (!HERO_LINE_PATTERN.test(before)) {
+      showCharacterToast('"- 주인공: ..." 라인을 찾지 못했어요. 문서를 확인해주세요.');
+      return;
+    }
+
+    // $1=prefix, $2=name(원본 무시 후 새 이름), $3=옵션(있으면 덮어쓰기) 자리 모두 새 텍스트로
+    const replacement = `$1${meta.name} (이미지: ${meta.url})`;
+    editor.value = before.replace(HERO_LINE_PATTERN, replacement);
+
+    // 시각 하이라이트 (영구 유지 — 자동 페이드 아웃 X)
+    highlightHeroLine(editor);
+
+    // 학생 편집 가능하게 포커스만 이동 (readonly 미적용)
     editor.focus();
   }
 
-  // [▶ 시작] 클릭 후 readonly 해제 + value 비우기 (대표 결정 1 명세 그대로)
-  function unlockEditorAfterStart() {
+  // ─────────── Hero line 시각 하이라이트 (E-3) ───────────
+  // 기술 선택: mirror div + <mark> — textarea 와 동일 폰트/패딩으로 깔린 div 가
+  //   hero line 만 <mark> 로 감싸 노란 배경 표시. textarea 는 그 위에 normal 색 텍스트.
+  //   영구 유지 (새 IP 클릭 또는 [▶ 시작] 시까지). 학생 자유 편집 가능.
+  function ensureEditorMirror(editor) {
+    // textarea 의 부모를 wrapper 로 변환 + mirror div 생성 (1회만)
+    if (editor._mirror && editor.parentElement && editor.parentElement.classList.contains('editor-textarea-wrapper')) {
+      return editor._mirror;
+    }
+    const parent = editor.parentElement;
+    if (!parent) return null;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'editor-textarea-wrapper';
+    parent.insertBefore(wrapper, editor);
+    wrapper.appendChild(editor);
+
+    const mirror = document.createElement('div');
+    mirror.className = 'editor-mirror';
+    mirror.setAttribute('aria-hidden', 'true');
+    wrapper.insertBefore(mirror, editor);
+    editor._mirror = mirror;
+    editor.classList.add('editor-textarea-with-mirror');
+
+    // textarea 스크롤 동기화
+    editor.addEventListener('scroll', () => {
+      mirror.scrollTop = editor.scrollTop;
+      mirror.scrollLeft = editor.scrollLeft;
+    });
+    // 학생이 직접 편집해 hero line 이 사라지면 하이라이트 자동 해제
+    editor.addEventListener('input', () => {
+      if (editor.dataset.heroHighlight === '1') {
+        renderHeroHighlight(editor);
+      }
+    });
+    return mirror;
+  }
+
+  function renderHeroHighlight(editor) {
+    const mirror = editor._mirror;
+    if (!mirror) return;
+    const value = editor.value;
+    const m = value.match(HERO_LINE_PATTERN);
+    if (!m) {
+      mirror.textContent = '';
+      mirror.hidden = true;
+      delete editor.dataset.heroHighlight;
+      return;
+    }
+    // 매치 위치 계산 — m.index, m[0].length
+    const start = m.index;
+    const end   = start + m[0].length;
+    const before = value.slice(0, start);
+    const hero   = value.slice(start, end);
+    const after  = value.slice(end);
+    // textContent 로 set 해도 HTML escape 자동 처리. <mark> 는 createElement 로 감쌈.
+    mirror.textContent = '';
+    mirror.appendChild(document.createTextNode(before));
+    const mark = document.createElement('mark');
+    mark.className = 'editor-hero-mark';
+    mark.appendChild(document.createTextNode(hero));
+    mirror.appendChild(mark);
+    mirror.appendChild(document.createTextNode(after));
+    mirror.hidden = false;
+    // 스크롤 동기
+    mirror.scrollTop = editor.scrollTop;
+    mirror.scrollLeft = editor.scrollLeft;
+  }
+
+  function highlightHeroLine(editor) {
+    ensureEditorMirror(editor);
+    editor.dataset.heroHighlight = '1';
+    renderHeroHighlight(editor);
+  }
+
+  function clearHeroHighlight() {
     const editor = $('#editor-textarea');
     if (!editor) return;
-    if (editor.dataset.lockedPrompt === '1') {
-      editor.value = '';
-      editor.readOnly = false;
-      editor.classList.remove('is-locked-prompt');
-      delete editor.dataset.lockedPrompt;
+    if (editor._mirror) {
+      editor._mirror.textContent = '';
+      editor._mirror.hidden = true;
     }
+    delete editor.dataset.heroHighlight;
   }
 
   function initCharacterPanel() {
     const p = setupPopover({ btnId: 'btn-character', popoverId: 'character-popover', closeId: 'character-popover-close' });
     if (!p) return;
 
-    // ── 4 IP 셀 클릭 → 자동 입력 (B-9 / B-10) ──
+    // ── 4 IP 셀 클릭 → hero line in-place patch (4차 사이클 E-2) ──
     $$('.character-card').forEach((card) => {
       card.addEventListener('click', () => {
         const key = card.dataset.char;
-        if (key && IP_PROMPTS[key]) {
+        if (key && IP_META[key]) {
           applyIpPrompt(key);
         } else {
-          // 폴백: 기존 동작 유지 (S10 직접 문서 삽입)
+          // 폴백: 기존 동작 유지 (S10 직접 문서 삽입 — hero line patch 와 무관)
           insertCharacterIntoDoc(card.dataset.label, card.dataset.file);
         }
         p.toggle(false);
@@ -1616,37 +1710,16 @@
       }
     });
 
-    // ── readonly 인 상태에서 학생이 #editor-textarea 타이핑 시도 시 안내 토스트 (B-10) ──
-    const editor = $('#editor-textarea');
-    if (editor) {
-      editor.addEventListener('beforeinput', () => {
-        if (editor.readOnly && editor.dataset.lockedPrompt === '1') {
-          showCharacterToast('이 문장은 그대로 보내주세요!');
-        }
-      });
-      editor.addEventListener('keydown', (e) => {
-        if (editor.readOnly && editor.dataset.lockedPrompt === '1') {
-          // 네비게이션 / 단축키는 통과
-          if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape'
-              || e.key === 'ArrowLeft' || e.key === 'ArrowRight'
-              || e.key === 'ArrowUp' || e.key === 'ArrowDown'
-              || e.key === 'Home' || e.key === 'End'
-              || e.key === 'PageUp' || e.key === 'PageDown'
-              || (e.metaKey || e.ctrlKey)) return;
-          // 인쇄 가능한 키 입력 시도 → 안내
-          if (e.key && e.key.length === 1) {
-            showCharacterToast('이 문장은 그대로 보내주세요!');
-          }
-        }
-      });
-    }
+    // ── readonly 잠금 폐기 (4차 사이클 E-4, 대표 9차 지시) ──
+    // 3차 사이클의 editor.readOnly / dataset.lockedPrompt / 타이핑 안내 토스트 모두 제거.
+    // 학생 자유 편집 = 사용자 의도. hero line 외 본문 (적/배경/색상/효과) 직접 수정 가능.
 
-    // ── [▶ 시작] 클릭 → 자동 비움 + readonly 해제 (대표 결정 1) ──
-    // handleStartClick 의 인자 평가는 동기적으로 즉시 일어남 → setTimeout 0 으로 비워도 안전
+    // ── [▶ 시작] 클릭 → 하이라이트 해제만 (영구 유지 정책의 종료점) ──
+    // value 비우기 / readonly 해제 모두 제거. lesson 본문 그대로 chat.js 입력으로 전송됨.
     const btnStart = $('#btn-start');
     if (btnStart) {
       btnStart.addEventListener('click', () => {
-        setTimeout(unlockEditorAfterStart, 0);
+        clearHeroHighlight();
       });
     }
 

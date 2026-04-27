@@ -3,15 +3,16 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        components.css
- * @version     v1.1.0
+ * @version     v1.2.0
  * @updated     2026-04-27 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 결정 반영)
- * @ordered-by  용남 대표
+ * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리
+ * @ordered-by  용남 대표 (9차 지시 — A안 5개 채택)
  * @description 공도 AI-Game 카툰 스타일 컴포넌트 — 버튼, 모달, 드로어, 튜터 메시지 등.
- *              v1.1.0 캐릭터 활성화 게이트 UI 추가 (잠금 시각, 모달, 토스트, PC 안내 배너,
- *              #editor-textarea readonly 잠금 시각).
+ *              v1.2.0 hero line 하이라이트 (mirror div + <mark>) 추가 — applyIpPrompt 재설계.
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.2.0 | 2026-04-27 | 클로이 4차 + 송PO 마무리 | mirror div + .editor-hero-mark 노란 하이라이트 (대표 9차 A안)
+ *                                                  v1.1.0 의 .editor-textarea.is-locked-prompt 는 readonly 폐기로 미사용 (제거 보류, 다음 정리)
  * v1.1.0 | 2026-04-27 | 클로이 | 캐릭터 잠금/활성/언락 모달/토스트/PC 안내 배너/에디터 readonly 시각
  *                                (JARVIS-2026-04-27-001 + 대표 2차 결정)
  * v1.0.0 | 이전        | 클로이 | 최초 작성
@@ -1786,5 +1787,54 @@ x-k { color: var(--color-brown); font-weight: 800; }
 @media (max-width: 768px) {
   /* 안내 배너 표시 시 main 컨텐츠가 가려지지 않도록 헤더 보정 */
   body.is-narrow-screen .app-header { margin-top: 56px; }
+}
+
+/* ────────── 4차 사이클 — Hero Line 시각 하이라이트 (mirror div + <mark>) ────────── */
+/* applyIpPrompt 재설계: lesson 본문 안의 "- 주인공:" 라인만 in-place patch.
+ * 변경된 라인을 노란 배경으로 강조 (영구 유지 — 새 IP 클릭 또는 lesson 전환 시까지).
+ * 기법: textarea 와 동일 폰트/패딩으로 깔린 mirror div + 변경 라인을 <mark> 로 감싸 노란 배경.
+ * textarea 자체는 transparent 배경 (mirror 가 보이도록), caret/입력은 정상 동작.
+ */
+.editor-textarea-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-height: 0;       /* flex column 내에서 textarea 가 꽉 차도록 */
+}
+.editor-textarea-wrapper > .editor-textarea-with-mirror {
+  background: transparent;       /* mirror 의 노란 mark 가 보이도록 */
+  position: relative;
+  z-index: 2;
+}
+.editor-textarea-wrapper > .editor-mirror {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  /* .editor-textarea 와 동일한 padding/font/line-height — 글자 위치 정확히 일치 */
+  padding: var(--space-5);
+  background: var(--color-cream);   /* textarea 의 배경을 mirror 가 가짐 (textarea 는 transparent) */
+  color: transparent;               /* mirror 의 텍스트는 안 보임. mark 만 보임 */
+  font-family: var(--font-code);
+  font-size: var(--fs-md);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;                 /* 스크롤 동기화는 JS 가 처리 */
+  pointer-events: none;
+  box-sizing: border-box;
+  border: none;
+  z-index: 1;                       /* textarea 보다 아래 */
+}
+.editor-textarea-wrapper > .editor-mirror[hidden] {
+  display: none;
+}
+.editor-mirror .editor-hero-mark {
+  background: #FFF3A0;             /* yellow tint — editor-flash 와 일관 */
+  color: transparent;
+  border-radius: 3px;
+  /* mark 는 inline 요소라 padding 영향이 일부만. 노란 배경이 자연스럽게 라인 끝까지 이어지도록 */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
