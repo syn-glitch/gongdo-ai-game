@@ -3,23 +3,27 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        chat.js
- * @version     v1.5.0
- * @updated     2026-04-19 (KST)
- * @agent       👨‍💻 알렉스 TL (자비스 개발팀) · 지시: 자비스 PO (김감사 QA-007 반영)
+ * @version     v1.6.0
+ * @updated     2026-04-27 (KST)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (3차 핫픽스 — 김감사 v2.0 진단 CRITICAL-1 차단)
  * @ordered-by  용남 대표
  * @description /api/chat — mode="generator" HTML 게임 생성 · mode="tutor" 학생 질문 응답.
  *              모델: claude-haiku-4-5-20251001 · Prompt Caching 적용.
  *
  * @change-summary
- *   AS-IS: v1.4 — "임시 에셋 폴백" stale 블록이 PNG 배포 후에도 살아있어 AI 가 100% 이모지 사용 (CRITICAL)
- *   TO-BE: v1.5 — stale 블록 제거 + 케이스 A 예시를 drawImage 패턴으로 갱신 → 이미지 우선, 이모지는 onerror 폴백
+ *   AS-IS: v1.5 — AI 응답이 마크다운만 포함하거나 닫는 백틱 없을 때 match[1] 이 마크다운을 캡쳐
+ *                 → iframe srcdoc 에 마크다운이 그대로 들어가 "lesson2 codeblock 게임 영역 노출" (CRITICAL-1)
+ *   TO-BE: v1.6 — HTML 추출 안전 fallback. DOCTYPE/<html 토큰 검증 + 마크다운 헤더 차단 + htmlExtractStatus 응답
  *
  * @features
- *   - [삭제] SYSTEM_GENERATOR 【임시 에셋 폴백】 블록 (PNG 배포 후 사실과 어긋남)
- *   - [수정] 케이스 A 예시 — drawImage 패턴 (이미지 프리로드 + drawImage / 이모지는 폴백)
- *   - [복원] 규칙 0 ① 의 이미지 우선 정책이 케이스 A 와 일관되도록 정렬
+ *   - [핫픽스 #2] HTML 추출 검증 — DOCTYPE 또는 <html 부재 시 html=null
+ *   - [핫픽스 #2] 마크다운 헤더(`#`,`##`) 로 시작하는 응답 차단 → html=null
+ *   - [추가]    응답에 `htmlExtractStatus` 포함 ('ok'|'no_doctype'|'markdown_only'|'empty')
+ *               → app.js 가 'ok' 외에는 "AI 응답 처리 실패. 다시 시도해주세요" 안내
+ *   - [유지]    SYSTEM_GENERATOR 시스템 프롬프트 / forceEmojiCharacters / injectBgmIntoGame 등
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.6.0 | 2026-04-27 | 클로이 | 핫픽스 #2 — HTML 추출 안전 fallback (CRITICAL-1 차단, 김감사 v2.0)
  * v1.5.0 | 2026-04-19 | 알렉스 | 임시 에셋 폴백 stale 블록 제거 + 케이스 A drawImage 갱신 (QA-007 CRITICAL fix)
  * v1.4.0 | 2026-04-19 | 알렉스 | 학생 학습용 주석 + max_tokens 상향 (BUNKER-2026-04-19-003)
  * v1.3.0 | 2026-04-19 | 알렉스 | 게임 뷰포트 고정 규칙 추가 (JARVIS-2026-04-19-001)
@@ -565,13 +569,43 @@ export default async function handler(req, res) {
       .join('\n');
 
     let html = null;
+    let htmlExtractStatus = null;   // 'ok' | 'no_doctype' | 'markdown_only' | 'empty'
     if (mode === 'generator') {
+      // ── 1) ```html ... ``` 코드블럭 우선 추출 ──
       const match = raw.match(/```html\s*([\s\S]*?)```/i);
-      html = match ? match[1].trim() : raw.trim();
-      html = forceEmojiCharacters(html);
-      // S-AI-01: 외부 http(s) script src 제거 — 허용 CDN(jsdelivr·fonts.googleapis) 외 차단
-      html = stripDisallowedExternalScripts(html);
-      if (musicScore) html = injectBgmIntoGame(html, musicScore);
+      let candidate = (match ? match[1] : raw || '').trim();
+      // 닫는 ``` 누락 시 raw fallback 에 시작 토큰(```html / ```)이 남을 수 있음 → 정제
+      candidate = candidate
+        .replace(/^```(?:html)?\s*/i, '')
+        .replace(/\s*```\s*$/i, '')
+        .trim();
+
+      // ── 2) 안전 검증 (핫픽스 #2 — 김감사 v2.0 CRITICAL-1 차단) ──
+      //   AI 응답이 ```html 시작했는데 닫는 백틱 없거나, 안에 마크다운만 있을 때
+      //   match[1] 이 마크다운을 캡쳐 → iframe srcdoc 에 마크다운이 그대로 들어가
+      //   "lesson2 codeblock 이 게임 영역에 노출" 되는 사용자 보고 버그.
+      //   → DOCTYPE 또는 <html 토큰 부재 시 / 명백한 마크다운(`#`,`##` 헤더 시작) 시 → null.
+      if (!candidate) {
+        htmlExtractStatus = 'empty';
+        html = null;
+      } else if (/^\s*#{1,6}\s/.test(candidate)) {
+        // 마크다운 헤더로 시작하는 응답 (lesson*.md 본문이 그대로 흘러나오는 경우)
+        htmlExtractStatus = 'markdown_only';
+        html = null;
+        console.warn('[chat.js] HTML 추출 실패 — 응답이 마크다운 헤더로 시작 (DOCTYPE 부재)');
+      } else if (!/<!DOCTYPE|<html/i.test(candidate)) {
+        // DOCTYPE / <html 둘 다 없으면 HTML 게임 문서 아님
+        htmlExtractStatus = 'no_doctype';
+        html = null;
+        console.warn('[chat.js] HTML 추출 실패 — DOCTYPE/html 토큰 부재. raw 앞 120자:', candidate.slice(0, 120));
+      } else {
+        htmlExtractStatus = 'ok';
+        html = candidate;
+        html = forceEmojiCharacters(html);
+        // S-AI-01: 외부 http(s) script src 제거 — 허용 CDN(jsdelivr·fonts.googleapis) 외 차단
+        html = stripDisallowedExternalScripts(html);
+        if (musicScore) html = injectBgmIntoGame(html, musicScore);
+      }
     }
 
     // 디버그 메타 (규칙 0 준수 확인용)
@@ -587,6 +621,8 @@ export default async function handler(req, res) {
       mode,
       reply: mode === 'tutor' ? raw.trim() : undefined,
       html,
+      // 핫픽스 #2: HTML 추출 상태를 클라이언트에 전달 → app.js 가 'ok' 외에는 오류 안내 표시
+      htmlExtractStatus: mode === 'generator' ? htmlExtractStatus : undefined,
       usage: msg.usage,
       rateLimit: { used: rl.used, limit: rl.limit, resetInSec: rl.resetInSec },
       debug: debugMeta,

@@ -3,30 +3,28 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.9.0
+ * @version     v1.10.0
  * @updated     2026-04-27 (KST)
- * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 결정 반영)
+ * @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (3차 핫픽스 — 김감사 v2.0 진단 CRITICAL-3 차단)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동,
  *              캐릭터 활성화 게이트 (in-memory 변수 — sessionStorage/localStorage 미사용).
  *
  * @change-summary
- *   AS-IS: v1.8.2 — [👤 캐릭터] 즉시 활성, 모든 차시에서 캐릭터 즉시 사용 가능
- *   TO-BE: v1.9.0 — [👤 캐릭터] 글로벌 비활성(🔒) + "ㅋㅋ도와줘" 키워드 활성화 + IP 자동 입력
- *                  (#editor-textarea 에 readonly 자동 입력, [▶ 시작] 후 setTimeout 0 으로 비움+해제)
+ *   AS-IS: v1.9.0 — IP_PROMPTS 가 상대 경로(./에셋_assets/...) → iframe srcdoc PNG 로드 실패 (CRITICAL-3)
+ *   TO-BE: v1.10.0 — IP_PROMPTS 절대 URL 변환 (chat.js line 186 경고문 + line 228~233 매핑표 정합)
  *
  * @features
- *   - [추가] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` 변수 (대표 2차 결정 🅱️)
- *           sessionStorage / localStorage 절대 미사용. F5 = 모듈 재로드 = 자동 초기화.
- *   - [추가] 활성화 모달 — IME compositionend 처리 (m6) + ESC/백드롭/취소 동작 통합 (m1)
- *   - [추가] IP 자동 입력 매핑 (kk/tory/bob/leon) → #editor-textarea readonly + [▶ 시작] 후 비움/해제 (B-10/M2)
- *   - [추가] 캐릭터 토스트 — 활성화 성공 / readonly 안내 메시지
- *   - [추가] 768px 이하 화면 안내 배너 (M5)
- *   - [수정] selectLesson — SPA 차시 전환 시 refreshCharacterButtonState 호출 (m5, 메모리 변수 보존)
- *   - [수정] handleStartClick — IP readonly 마킹 시 setTimeout 0 으로 비움+해제
+ *   - [핫픽스 #1] IP_PROMPTS 4개 키 절대 URL 변환 — `https://gongdo-ai-game.vercel.app/에셋_assets/...`
+ *                IP_ASSET_BASE 상수로 일원화. chat.js v1.6.0 안전 추출 핫픽스와 동시 배포.
+ *   - [유지] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` 변수 (대표 2차 결정 🅱️)
+ *   - [유지] 활성화 모달 — IME compositionend 처리 (m6) + ESC/백드롭/취소 동작 통합 (m1)
+ *   - [유지] IP 자동 입력 매핑 → #editor-textarea readonly + [▶ 시작] 후 비움/해제 (B-10/M2)
+ *   - [유지] 캐릭터 토스트, 768px 이하 화면 안내 배너 (M5), selectLesson hook (m5)
  *
  * ── 변경 이력 ──────────────────────────
- * v1.9.0 | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea, in-memory)
+ * v1.10.0 | 2026-04-27 | 클로이 | 핫픽스 #1 — IP_PROMPTS 절대 URL 변환 (CRITICAL-3 차단, 김감사 v2.0)
+ * v1.9.0  | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea, in-memory)
  * v1.8.2 | 2026-04-19 | 클로이 | "장르" 버튼 hide + 섹션별 Fallback 안내 사전 (대표 정리)
  * v1.8.1 | 2026-04-19 | 클로이 | Fallback 잔존 fix + 코드 영역 inline info (QA-006 MAJOR-1, MINOR-3)
  * v1.8.0 | 2026-04-19 | 클로이 | 항목별 [🔍 코드] 버튼 + 부분 하이라이트 (PRD 생략 Fast-Track)
@@ -330,7 +328,22 @@
       }
       if (!data.html) {
         hideGeneratingModal();
-        $('#game-status').textContent = '게임을 만들지 못했어요. 문서를 조금 바꿔볼까요?';
+        // 핫픽스 #2 (chat.js v1.6.0): htmlExtractStatus 별 차별 안내
+        let msg;
+        switch (data.htmlExtractStatus) {
+          case 'markdown_only':
+            msg = '⚠️ AI 응답 처리 실패 (마크다운만 도착). 다시 시도해주세요.';
+            break;
+          case 'no_doctype':
+            msg = '⚠️ AI 응답 처리 실패 (HTML 형식 아님). 다시 시도해주세요.';
+            break;
+          case 'empty':
+            msg = '⚠️ AI 응답이 비어있어요. 잠시 후 다시 시도해주세요.';
+            break;
+          default:
+            msg = '게임을 만들지 못했어요. 문서를 조금 바꿔볼까요?';
+        }
+        $('#game-status').textContent = msg;
         return;
       }
 
@@ -1377,13 +1390,15 @@
   //   - SPA 차시 전환 = 페이지 이동 X = 메모리 보존 → 1·3·4차시 오가도 활성 유지
   const CHAR_UNLOCK_KEYWORD = 'ㅋㅋ도와줘';   // 단일 진실 원천
 
-  // IP 자동 입력 매핑 — sub_task JARVIS-2026-04-27-001 v1.0 본문 그대로
-  // (상대 경로 vs 절대 URL 비결정성은 김감사 Phase C QA-007 매트릭스에서 검증)
+  // IP 자동 입력 매핑 — chat.js v1.5.0 매핑표(line 228~233) 절대 URL 형식과 정합.
+  // 김감사 v2.0 진단 CRITICAL-3: 상대 경로(./에셋_assets/...)는 iframe srcdoc 에서 작동 X.
+  // chat.js line 186 의 명시 경고(상대 경로 임의 사용 금지)에 맞춰 핫픽스 #1 절대 URL 로 전환.
+  const IP_ASSET_BASE = 'https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters';
   const IP_PROMPTS = {
-    kk:   '주인공을 ㅋㅋ로 바꿔줘. ㅋㅋ 일러스트 이미지(./에셋_assets/캐릭터_characters/kk_idle.png)를 그대로 사용해줘.',
-    tory: '주인공을 토리로 바꿔줘. 토리 일러스트 이미지(./에셋_assets/캐릭터_characters/tory_idle.png)를 그대로 사용해줘.',
-    bob:  '주인공을 밥으로 바꿔줘. 밥 일러스트 이미지(./에셋_assets/캐릭터_characters/bob_idle.png)를 그대로 사용해줘.',
-    leon: '주인공을 레옹으로 바꿔줘. 레옹 일러스트 이미지(./에셋_assets/캐릭터_characters/leon_idle.png)를 그대로 사용해줘.',
+    kk:   `주인공을 ㅋㅋ로 바꿔줘. ㅋㅋ 일러스트 이미지(${IP_ASSET_BASE}/kk_idle.png)를 그대로 사용해줘.`,
+    tory: `주인공을 토리로 바꿔줘. 토리 일러스트 이미지(${IP_ASSET_BASE}/tory_idle.png)를 그대로 사용해줘.`,
+    bob:  `주인공을 밥으로 바꿔줘. 밥 일러스트 이미지(${IP_ASSET_BASE}/bob_idle.png)를 그대로 사용해줘.`,
+    leon: `주인공을 레옹으로 바꿔줘. 레옹 일러스트 이미지(${IP_ASSET_BASE}/leon_idle.png)를 그대로 사용해줘.`,
   };
 
   // ── in-memory 영속성 (대표 2차 결정 🅱️) ──
