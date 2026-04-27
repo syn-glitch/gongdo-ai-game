@@ -6,6 +6,10 @@
 
 🌐 **운영 URL**: https://gongdo-ai-game.vercel.app/
 
+📄 **외부 개발자 핸드오프 문서**: [`docs/DEVELOPER_HANDOFF.md`](docs/DEVELOPER_HANDOFF.md) — 이슈 발생 시 트러블슈팅·롤백·코드 위치 한 페이지 안내
+
+🏷️ **안정 버전**: [`v0.4.0-pilot`](https://github.com/syn-glitch/gongdo-ai-game/releases/tag/v0.4.0-pilot)
+
 ---
 
 ## 🚀 핵심 기능
