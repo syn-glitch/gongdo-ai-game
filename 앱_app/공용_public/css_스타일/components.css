@@ -3,14 +3,22 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        components.css
- * @version     v1.2.1
- * @updated     2026-04-27 (KST)
- * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리
- * @ordered-by  용남 대표 (9차 지시 — A안 5개 채택)
+ * @version     v1.3.0
+ * @updated     2026-04-28 (KST)
+ * @agent       👧 클로이 FE (JARVIS-2026-04-28-001)
+ * @ordered-by  용남 대표 (BUNKER-2026-04-28-001 송PO 위임)
  * @description 공도 AI-Game 카툰 스타일 컴포넌트 — 버튼, 모달, 드로어, 튜터 메시지 등.
- *              v1.2.0 hero line 하이라이트 (mirror div + <mark>) 추가 — applyIpPrompt 재설계.
+ *              v1.3.0 비활성 차시 사이드바 시각 (.tree-folder.is-disabled) 추가.
+ *
+ * @change-summary
+ *   AS-IS v1.2.1: 캐릭터 게이트 시각 + mirror highlight 까지
+ *   TO-BE v1.3.0: 비활성 차시 사이드바 회색 grayscale + cursor not-allowed (3·4차시 비활성화)
+ *
+ * @features
+ *   - [추가] .tree-folder.is-disabled — manifest.lessons[].enabled===false 차시 시각 (BUNKER-2026-04-28-001)
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.3.0 | 2026-04-28 | 클로이 | 비활성 차시 사이드바 시각 .tree-folder.is-disabled 추가 (BUNKER-2026-04-28-001)
  * v1.2.1 | 2026-04-27 | 송PO patch | .editor-hero-mark background = var(--color-yellow) #F7C548 (베스트 케이스 시각 강도, 대표 라이브 검수)
  * v1.2.0 | 2026-04-27 | 클로이 4차 + 송PO 마무리 | mirror div + .editor-hero-mark 노란 하이라이트 (대표 9차 A안)
  *                                                  v1.1.0 의 .editor-textarea.is-locked-prompt 는 readonly 폐기로 미사용 (제거 보류, 다음 정리)
@@ -1754,6 +1762,21 @@ x-k { color: var(--color-brown); font-weight: 800; }
   transform: translate(-50%, 0);
 }
 .character-toast[hidden] { display: none; }
+
+/* ─────── BUNKER-2026-04-28-001: 비활성 차시 사이드바 시각 ─────── */
+/* manifest.lessons[].enabled === false 인 차시 (현재 3차시·4차시).
+   관리자가 manifest 의 enabled 를 true 로 바꾸면 즉시 시각 복원. */
+.tree-folder.is-disabled > .tree-toggle,
+.tree-folder.is-disabled .tree-children .tree-file {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  cursor: not-allowed;
+}
+.tree-folder.is-disabled > .tree-toggle:hover,
+.tree-folder.is-disabled .tree-children .tree-file:hover {
+  background: transparent;
+  border-color: transparent;
+}
 
 /* ─────── #editor-textarea readonly 잠금 시각 (대표 결정 1: editor-textarea 사용) ─────── */
 .editor-textarea.is-locked-prompt {

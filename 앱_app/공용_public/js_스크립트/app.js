@@ -3,28 +3,26 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.12.0
- * @updated     2026-04-27 (KST)
- * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리 (deploy_header + selectLesson 검증)
- * @ordered-by  용남 대표 (9차 지시 — A안 5개 모두 채택)
+ * @version     v1.13.0
+ * @updated     2026-04-28 (KST)
+ * @agent       👧 클로이 FE (JARVIS-2026-04-28-001 · 송PO 위임 BUNKER-2026-04-28-001)
+ * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동,
- *              캐릭터 활성화 게이트 (in-memory 변수 — sessionStorage/localStorage 미사용).
+ *              캐릭터 활성화 게이트 + 비활성 차시(3·4) 사이드바 가드 + 도구바 음악·예시 게이트.
  *
  * @change-summary
- *   AS-IS: v1.10.0 — IP 셀 클릭 시 textarea 전체 덮어쓰기 + readonly (사용자 의도와 정반대)
- *   TO-BE: v1.11.0 — applyIpPrompt 재설계 = "- 주인공:" 라인만 in-place patch + mirror div 노란 하이라이트 + readonly 폐기
+ *   AS-IS v1.12.0: 캐릭터 게이트 + IP in-place patch + mirror highlight + lesson stripping
+ *   TO-BE v1.13.0: 사이드바 비활성 차시 가드(toast "3,4교시에 만나요") + 도구바 음악·예시 게이트(캐릭터 패턴 복제, 키워드 미정 fallback)
  *
  * @features
- *   - [재설계] applyIpPrompt — IP_META + HERO_LINE_PATTERN 정규식으로 "- 주인공: X" 라인만 in-place patch
- *                 lesson 본문 (적/배경/색상/효과 등) 모두 유지. 4차시 모든 lesson 동일 동작.
- *   - [신규] highlightHeroLine — mirror div + <mark> 기법으로 변경 라인에 노란 배경 (영구 유지)
- *   - [신규] clearHeroHighlight — selectLesson 안에 호출 (차시 전환 시 잔재 정리)
- *   - [폐기] readonly 잠금 — B-10 / M2 의 dataset.lockedPrompt / unlockEditorAfterStart / 타이핑 안내 토스트 모두 제거
- *   - [유지] IP_META 4 키 절대 URL (chat.js v1.6.0 매핑표 정합, CRITICAL-3 차단 유지)
- *   - [유지] 캐릭터 활성화 게이트 — in-memory `_characterUnlocked` (대표 5차 결정)
- *   - [유지] 활성화 모달 IME / ESC / 백드롭 / 취소 / 768px 안내 배너 / selectLesson hook
+ *   - [추가] renderLessonTree 에 lesson.enabled===false 가드 (.tree-folder.is-disabled + 클릭 토스트)
+ *   - [추가] selectLesson 진입부 안전망 가드
+ *   - [추가] isFeatureGated / refreshFeatureGateButtons / openFeatureUnlockModal / closeFeatureUnlockModal / handleFeatureUnlockConfirm
+ *   - [추가] initFeatureGate() — 도구바 unlock 버튼 + 음악·예시 모달 이벤트 바인딩
+ *   - [재사용] showCharacterToast — 메시지 "3,4교시에 만나요" (다음 수업 인지 유도, 대표 결정)
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.13.0 | 2026-04-28 | 클로이 | 비활성 차시 가드 + 도구바 음악·예시 게이트 (BUNKER-2026-04-28-001)
  * v1.12.0 | 2026-04-27 | 송PO B안 patch | loadLessonFile 에 deploy_header 자동 stripping (lesson{N}.md 운영 메타데이터 학생 노출 차단) — 대표 라이브 검수 보강 #3
  * v1.11.2 | 2026-04-27 | 송PO patch | applyIpPrompt = caret + setSelectionRange + focus + scrollTop (textarea native 자동 스크롤). scrollHeroLineIntoView 폐기 — 대표 라이브 보강 #2
  * v1.11.1 | 2026-04-27 | 송PO patch | scrollHeroLineIntoView 추가 (hero line 자동 스크롤, 학생 즉시 발견) — 대표 라이브 검수 보강
@@ -112,6 +110,8 @@
       state.manifest = await res.json();
       renderLessonTree();
       renderMyWorksTree();
+      // BUNKER-2026-04-28-001: manifest 로드 직후 도구바 음악·예시 게이트 초기 동기화
+      if (typeof refreshFeatureGateButtons === 'function') refreshFeatureGateButtons();
     } catch (err) {
       console.error('[공도 AI-Game]', err);
       $('#drawer-lessons').innerHTML = '<li class="tree-empty">수업 목록을 불러오지 못했어요</li>';
@@ -127,6 +127,12 @@
       folder.className = 'tree-folder';
       folder.dataset.lesson = lesson.no;
       folder.setAttribute('role', 'treeitem');
+      // BUNKER-2026-04-28-001: lesson.enabled === false 면 시각 비활성 + 클릭 시 토스트 안내
+      const isDisabled = lesson.enabled === false;
+      if (isDisabled) {
+        folder.classList.add('is-disabled');
+        folder.setAttribute('aria-disabled', 'true');
+      }
 
       const toggle = document.createElement('button');
       toggle.type = 'button';
@@ -140,7 +146,10 @@
           <span class="tree-toggle-subtitle">${lesson.emoji} ${lesson.subtitle}</span>
         </span>
       `;
-      toggle.addEventListener('click', () => toggleFolder(folder, toggle));
+      toggle.addEventListener('click', () => {
+        if (isDisabled) { showCharacterToast('3,4교시에 만나요'); return; }
+        toggleFolder(folder, toggle);
+      });
 
       const children = document.createElement('ul');
       children.className = 'tree-children';
@@ -151,11 +160,16 @@
       fileBtn.setAttribute('role', 'treeitem');
       fileBtn.tabIndex = 0;
       fileBtn.dataset.lesson = lesson.no;
+      if (isDisabled) fileBtn.setAttribute('aria-disabled', 'true');
       fileBtn.innerHTML = `<span aria-hidden="true">📄</span> ${lesson.title} 문서`;
-      fileBtn.addEventListener('click', () => selectLesson(lesson.no));
+      fileBtn.addEventListener('click', () => {
+        if (isDisabled) { showCharacterToast('3,4교시에 만나요'); return; }
+        selectLesson(lesson.no);
+      });
       fileBtn.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          if (isDisabled) { showCharacterToast('3,4교시에 만나요'); return; }
           selectLesson(lesson.no);
         }
       });
@@ -224,6 +238,12 @@
 
   // ─────────── 차시 문서 선택 ───────────
   async function selectLesson(lessonNo) {
+    // BUNKER-2026-04-28-001: 비활성 차시 안전망 (클릭 핸들러 가드 우회 시 보호)
+    const _lessonGuard = state.manifest && state.manifest.lessons.find((l) => l.no === Number(lessonNo));
+    if (_lessonGuard && _lessonGuard.enabled === false) {
+      showCharacterToast('3,4교시에 만나요');
+      return;
+    }
     state.currentLesson = Number(lessonNo);
     state.currentWork = null;
 
@@ -250,6 +270,8 @@
       refreshCodeViewBtnVisibility();   // BUNKER-003 FR-3: 1·2·3차시만 노출
       // JARVIS-2026-04-27-001 (m5): SPA 차시 전환 시 캐릭터 버튼 상태 동기화 — in-memory 변수만 참조
       if (typeof refreshCharacterButtonState === 'function') refreshCharacterButtonState();
+      // BUNKER-2026-04-28-001: 차시 전환 시 도구바 음악·예시 게이트 동기화 (예시 버튼 hidden 토글 반영)
+      if (typeof refreshFeatureGateButtons === 'function') refreshFeatureGateButtons();
       editor.focus();
       $('#game-status').textContent =
         `${lessonNo}차시 문서가 열렸어요. 수정한 뒤 [시작]을 눌러봐요!`;
@@ -1753,6 +1775,185 @@
     refreshCharacterButtonState();
   }
 
+  // ─────────── BUNKER-2026-04-28-001: 도구바 음악·예시 게이트 ───────────
+  // 캐릭터 게이트 패턴 복제. manifest.featureFlags 단일 진실.
+  // 키워드 미정 — 모달까지만 작동, [확인] 시 입력 무관 토스트 + 모달 닫힘.
+  // 추후 키워드 작명 시 handleFeatureUnlockConfirm 안의 검증 로직 한 줄만 갈아끼우면 작동.
+  let _bgmUnlockComposing = false;
+  let _variantUnlockComposing = false;
+
+  function isFeatureGated(featureKey) {
+    const flags = state.manifest && state.manifest.featureFlags;
+    return !!(flags && flags[featureKey] && flags[featureKey].enabled === false);
+  }
+
+  function refreshFeatureGateButtons() {
+    // 음악
+    const bgmBtn = $('#btn-bgm');
+    const bgmUnlockBtn = $('#btn-bgm-unlock');
+    if (bgmBtn && bgmUnlockBtn) {
+      if (isFeatureGated('music')) {
+        bgmBtn.disabled = true;
+        bgmBtn.classList.add('is-locked');
+        bgmBtn.setAttribute('aria-label', '음악 (잠김)');
+        bgmBtn.title = '선생님이 알려주실 때 켜요';
+        bgmUnlockBtn.hidden = false;
+      } else {
+        bgmBtn.disabled = false;
+        bgmBtn.classList.remove('is-locked');
+        bgmBtn.setAttribute('aria-label', '배경음악 열기');
+        bgmBtn.removeAttribute('title');
+        bgmUnlockBtn.hidden = true;
+      }
+    }
+    // 예시 — 본 [예시] 버튼은 차시별 hidden 토글되므로 unlock 버튼도 동기 처리
+    const variantBtn = $('#btn-variant');
+    const variantUnlockBtn = $('#btn-variant-unlock');
+    if (variantBtn && variantUnlockBtn) {
+      if (isFeatureGated('example')) {
+        variantBtn.disabled = true;
+        variantBtn.classList.add('is-locked');
+        variantBtn.setAttribute('aria-label', '예시 (잠김)');
+        variantBtn.title = '선생님이 알려주실 때 켜요';
+        // 본 버튼이 hidden 인 차시(2·3·4차시)에서는 unlock 버튼도 hidden 유지
+        variantUnlockBtn.hidden = variantBtn.hidden;
+      } else {
+        variantBtn.disabled = false;
+        variantBtn.classList.remove('is-locked');
+        variantBtn.setAttribute('aria-label', '예시 게임 바꾸기');
+        variantBtn.removeAttribute('title');
+        variantUnlockBtn.hidden = true;
+      }
+    }
+  }
+
+  function _featureModalIds(featureKey) {
+    return featureKey === 'music'
+      ? { modal: '#bgm-unlock-modal', input: '#bgm-unlock-input', error: '#bgm-unlock-error', confirm: '#bgm-unlock-confirm' }
+      : { modal: '#variant-unlock-modal', input: '#variant-unlock-input', error: '#variant-unlock-error', confirm: '#variant-unlock-confirm' };
+  }
+
+  function openFeatureUnlockModal(featureKey) {
+    const ids = _featureModalIds(featureKey);
+    const modal = $(ids.modal), input = $(ids.input), error = $(ids.error), confirmBtn = $(ids.confirm);
+    if (!modal) return;
+    modal.hidden = false;
+    if (error) error.hidden = true;
+    if (input) input.value = '';
+    if (confirmBtn) confirmBtn.disabled = true;
+    if (featureKey === 'music') _bgmUnlockComposing = false;
+    else _variantUnlockComposing = false;
+    setTimeout(() => input && input.focus(), 30);
+  }
+
+  function closeFeatureUnlockModal(featureKey) {
+    const ids = _featureModalIds(featureKey);
+    const modal = $(ids.modal), input = $(ids.input), error = $(ids.error);
+    if (input) input.value = '';
+    if (error) error.hidden = true;
+    if (modal) modal.hidden = true;
+  }
+
+  function handleFeatureUnlockConfirm(featureKey) {
+    // 키워드 미정 — 입력 무관 토스트 + 모달 닫힘.
+    // 추후 키워드 작명 시 다음 코드로 교체:
+    //   const ids = _featureModalIds(featureKey);
+    //   const input = $(ids.input);
+    //   const normalized = (input.value || '').trim().replace(/\s+/g, '');
+    //   const KEYWORD = featureKey === 'music' ? MUSIC_UNLOCK_KEYWORD : EXAMPLE_UNLOCK_KEYWORD;
+    //   if (normalized === KEYWORD) { /* 활성화 + 토스트 + featureFlags 메모리 토글 */ }
+    //   else { /* 실패 안내 */ }
+    if (featureKey === 'music' && _bgmUnlockComposing) return;
+    if (featureKey === 'example' && _variantUnlockComposing) return;
+    closeFeatureUnlockModal(featureKey);
+    showCharacterToast('3,4교시에 만나요');
+  }
+
+  function initFeatureGate() {
+    // 도구바 unlock 버튼 (캐릭터 wrapper 와 달리 본 버튼이 disabled 라 wrapper 불필요 — unlock 버튼 직접 클릭)
+    const bgmUnlock = $('#btn-bgm-unlock');
+    if (bgmUnlock) {
+      bgmUnlock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openFeatureUnlockModal('music');
+      });
+    }
+    const variantUnlock = $('#btn-variant-unlock');
+    if (variantUnlock) {
+      variantUnlock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openFeatureUnlockModal('example');
+      });
+    }
+
+    // 모달 폼 / 입력 / 취소 / 백드롭 — 음악
+    _bindFeatureModal('music');
+    _bindFeatureModal('example');
+
+    // 초기 동기화 — manifest 가 이미 로드돼 있으면 즉시, 아니면 initLessons 가 호출
+    if (state.manifest) refreshFeatureGateButtons();
+  }
+
+  function _bindFeatureModal(featureKey) {
+    const ids = _featureModalIds(featureKey);
+    const formId = featureKey === 'music' ? '#bgm-unlock-form' : '#variant-unlock-form';
+    const cancelId = featureKey === 'music' ? '#bgm-unlock-cancel' : '#variant-unlock-cancel';
+
+    const form = $(formId);
+    const input = $(ids.input);
+    const cancelBtn = $(cancelId);
+    const confirmBtn = $(ids.confirm);
+    const modal = $(ids.modal);
+    const errorEl = $(ids.error);
+
+    const setComposing = (val) => {
+      if (featureKey === 'music') _bgmUnlockComposing = val;
+      else _variantUnlockComposing = val;
+    };
+    const isComposing = () => featureKey === 'music' ? _bgmUnlockComposing : _variantUnlockComposing;
+
+    if (input) {
+      input.addEventListener('compositionstart', () => {
+        setComposing(true);
+        if (confirmBtn) confirmBtn.disabled = true;
+      });
+      input.addEventListener('compositionend', () => {
+        setComposing(false);
+        if (confirmBtn) confirmBtn.disabled = input.value.length === 0;
+      });
+      input.addEventListener('input', () => {
+        if (errorEl && !errorEl.hidden) errorEl.hidden = true;
+        if (!isComposing() && confirmBtn) {
+          confirmBtn.disabled = input.value.length === 0;
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          if (isComposing()) return;
+          e.preventDefault();
+          handleFeatureUnlockConfirm(featureKey);
+        }
+      });
+    }
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleFeatureUnlockConfirm(featureKey);
+      });
+    }
+    if (cancelBtn) cancelBtn.addEventListener('click', () => closeFeatureUnlockModal(featureKey));
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeFeatureUnlockModal(featureKey);
+      });
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && !modal.hidden) {
+        closeFeatureUnlockModal(featureKey);
+      }
+    });
+  }
+
   // ─────────── 배경 테마 패널 (S11) ───────────
   function initThemePanel() {
     const p = setupPopover({ btnId: 'btn-theme', popoverId: 'theme-popover', closeId: 'theme-popover-close' });
@@ -2235,6 +2436,7 @@
     initResetPanel();
     initCodeViewPanel();
     initCharacterPanel();
+    initFeatureGate();   // BUNKER-2026-04-28-001: 도구바 음악·예시 게이트
     initThemePanel();
     initBgmPanel();
     initPresentation();

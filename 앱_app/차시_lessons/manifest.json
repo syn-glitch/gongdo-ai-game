@@ -1,9 +1,14 @@
 {
-  "version": "v0.4.0",
-  "updated": "2026-04-27",
+  "version": "v0.4.1",
+  "updated": "2026-04-28",
+  "featureFlags": {
+    "music":   { "enabled": false, "_note": "도구바 [음악] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" },
+    "example": { "enabled": false, "_note": "도구바 [예시] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" }
+  },
   "lessons": [
     {
       "no": 1,
+      "enabled": true,
       "title": "바이브코딩 시작",
       "emoji": "🚀",
       "file": "lesson1.md",
@@ -18,6 +23,7 @@
     },
     {
       "no": 2,
+      "enabled": true,
       "title": "캐릭터 꾸미기",
       "emoji": "🎭",
       "file": "lesson2.md",
@@ -27,6 +33,7 @@
     },
     {
       "no": 3,
+      "enabled": false,
       "title": "효과음·BGM",
       "emoji": "🎵",
       "file": "lesson3.md",
@@ -36,6 +43,7 @@
     },
     {
       "no": 4,
+      "enabled": false,
       "title": "발표 자료 만들기",
       "emoji": "📣",
       "file": "lesson4.md",

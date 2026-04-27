@@ -3,25 +3,23 @@
  📋 배포 이력 (Deploy Header)
  ============================================
  @file        index.html
- @version     v1.1.0
- @updated     2026-04-27 (KST)
- @agent       👧 클로이 FE (자비스 개발팀) · 지시: 자비스 PO (송PO 위임 JARVIS-2026-04-27-001 · 대표 2차 사이클 결정 반영)
+ @version     v1.2.0
+ @updated     2026-04-28 (KST)
+ @agent       👧 클로이 FE (JARVIS-2026-04-28-001 · 송PO 위임 BUNKER-2026-04-28-001)
  @ordered-by  용남 대표
  @description 공도 AI-Game 앱 메인 — 도구바 [👤 캐릭터] 잠금 게이트 + [🔓 캐릭터 활성화하기] +
-              키워드 활성화 모달 + 768px 이하 PC 안내 배너 + 캐릭터 활성화 토스트 추가.
+              [🔓 음악 활성화하기] + [🔓 예시 활성화하기] + 음악·예시 활성화 모달 (BUNKER-2026-04-28-001).
 
  @change-summary
-   AS-IS: [👤 캐릭터] 즉시 활성, 모든 차시에서 캐릭터 즉시 사용 가능
-   TO-BE: [👤 캐릭터] 글로벌 비활성(🔒) + 키워드 "ㅋㅋ도와줘" 입력 시 활성. in-memory 영속성 (대표 2차 결정 🅱️).
+   AS-IS v1.1.0: 캐릭터 게이트 + 모달 + IP 자동 입력 + PC 안내 배너
+   TO-BE v1.2.0: 도구바 음악·예시 게이트 추가 (캐릭터 게이트 패턴 복제, 모달 인스턴스 분리). 키워드 미정 — 모달까지만 작동.
 
  @features
-   - [추가] 도구바 [🔓 캐릭터 활성화하기] 버튼 (B-1)
-   - [추가] 캐릭터 활성화 모달 — `<dialog>` 시멘틱 + IME compositionend 검증 (B-2, B-6)
-   - [수정] [👤 캐릭터] 버튼 wrapper + 🔒/👤 아이콘 토글 (B-4, B-5)
-   - [추가] 캐릭터 활성화 토스트 (B-7) + readonly 안내 토스트 (B-10)
-   - [추가] 768px 이하 PC 안내 배너 (B-11, M5)
+   - [추가] 도구바 [🔓 음악 활성화하기] / [🔓 예시 활성화하기] 버튼 (BUNKER-2026-04-28-001)
+   - [추가] #bgm-unlock-modal / #variant-unlock-modal 활성화 모달 마크업 (캐릭터 모달 복제)
 
  ── 변경 이력 ──────────────────────────
+ v1.2.0 | 2026-04-28 | 클로이 | 음악·예시 게이트 도구바 버튼 + 활성화 모달 추가 (BUNKER-2026-04-28-001)
  v1.1.0 | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea) (JARVIS-2026-04-27-001 v1.0.0 + 대표 2차 결정)
  v1.0.0 | 이전        | 클로이 | 최초 작성 (S02~S17)
  ============================================
@@ -92,6 +90,10 @@
           <button type="button" class="toolbar-btn" id="btn-variant" aria-label="예시 게임 바꾸기" aria-expanded="false" aria-controls="variant-popover" hidden>
             <span aria-hidden="true">🎮</span> <span class="toolbar-btn-label">예시</span>
           </button>
+          <!-- BUNKER-2026-04-28-001: [🔓 예시 활성화하기] (manifest.featureFlags.example.enabled === false 일 때 노출) -->
+          <button type="button" class="toolbar-btn toolbar-btn-unlock" id="btn-variant-unlock" aria-label="예시 활성화하기" aria-haspopup="dialog" hidden>
+            <span aria-hidden="true">🔓</span> <span class="toolbar-btn-label">예시 활성화하기</span>
+          </button>
           <button type="button" class="toolbar-btn" id="btn-code-view" aria-label="진짜 코드 구경하기" aria-expanded="false" aria-controls="code-view-overlay" hidden>
             <span aria-hidden="true">🔍</span> <span class="toolbar-btn-label">코드 구경</span>
           </button>
@@ -108,6 +110,10 @@
           </button>
           <button type="button" class="toolbar-btn" id="btn-bgm" aria-label="배경음악 열기" aria-expanded="false" aria-controls="bgm-popover">
             <span aria-hidden="true">🎵</span> <span class="toolbar-btn-label" id="btn-bgm-label">음악</span>
+          </button>
+          <!-- BUNKER-2026-04-28-001: [🔓 음악 활성화하기] (manifest.featureFlags.music.enabled === false 일 때 노출) -->
+          <button type="button" class="toolbar-btn toolbar-btn-unlock" id="btn-bgm-unlock" aria-label="음악 활성화하기" aria-haspopup="dialog" hidden>
+            <span aria-hidden="true">🔓</span> <span class="toolbar-btn-label">음악 활성화하기</span>
           </button>
         </div>
 
@@ -517,6 +523,46 @@
         <div class="character-unlock-actions">
           <button type="button" class="btn btn-ghost" id="character-unlock-cancel">취소</button>
           <button type="submit" class="btn btn-primary" id="character-unlock-confirm" disabled>확인</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BUNKER-2026-04-28-001: 음악 활성화 키워드 모달 (캐릭터 모달 마크업 복제, 키워드 미정) -->
+  <div id="bgm-unlock-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="bgm-unlock-title" aria-describedby="bgm-unlock-desc">
+    <div class="modal-card character-unlock-card">
+      <div class="modal-emoji" aria-hidden="true">🔓</div>
+      <h2 id="bgm-unlock-title" class="modal-title">음악 활성화</h2>
+      <p id="bgm-unlock-desc" class="modal-desc">선생님이 알려주신 키워드를 입력해보세요!</p>
+      <form id="bgm-unlock-form" class="character-unlock-form" autocomplete="off">
+        <label for="bgm-unlock-input" class="sr-only">음악 활성화 키워드</label>
+        <input type="text" id="bgm-unlock-input" class="character-unlock-input"
+               inputmode="text" maxlength="40"
+               placeholder="키워드를 입력해주세요" aria-describedby="bgm-unlock-error">
+        <p id="bgm-unlock-error" class="character-unlock-error" hidden role="alert">다시 한번 입력해보세요</p>
+        <div class="character-unlock-actions">
+          <button type="button" class="btn btn-ghost" id="bgm-unlock-cancel">취소</button>
+          <button type="submit" class="btn btn-primary" id="bgm-unlock-confirm" disabled>확인</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BUNKER-2026-04-28-001: 예시 활성화 키워드 모달 (캐릭터 모달 마크업 복제, 키워드 미정) -->
+  <div id="variant-unlock-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="variant-unlock-title" aria-describedby="variant-unlock-desc">
+    <div class="modal-card character-unlock-card">
+      <div class="modal-emoji" aria-hidden="true">🔓</div>
+      <h2 id="variant-unlock-title" class="modal-title">예시 활성화</h2>
+      <p id="variant-unlock-desc" class="modal-desc">선생님이 알려주신 키워드를 입력해보세요!</p>
+      <form id="variant-unlock-form" class="character-unlock-form" autocomplete="off">
+        <label for="variant-unlock-input" class="sr-only">예시 활성화 키워드</label>
+        <input type="text" id="variant-unlock-input" class="character-unlock-input"
+               inputmode="text" maxlength="40"
+               placeholder="키워드를 입력해주세요" aria-describedby="variant-unlock-error">
+        <p id="variant-unlock-error" class="character-unlock-error" hidden role="alert">다시 한번 입력해보세요</p>
+        <div class="character-unlock-actions">
+          <button type="button" class="btn btn-ghost" id="variant-unlock-cancel">취소</button>
+          <button type="submit" class="btn btn-primary" id="variant-unlock-confirm" disabled>확인</button>
         </div>
       </form>
     </div>
