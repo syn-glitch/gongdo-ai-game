@@ -3,15 +3,16 @@
  📋 문서 배포 이력 (Deploy Header)
  ============================================
  @file        DEVELOPER_HANDOFF.md
- @version     v1.0.1
- @updated     2026-04-27 (KST)
- @agent       📝 꼼꼼이 (Docs Team Lead)
+ @version     v1.1.0
+ @updated     2026-04-28 (KST)
+ @agent       📝 꼼꼼이 (Docs Team Lead) · 송PO 직접 patch (BUNKER-2026-04-28-001 사이클 동기)
  @ordered-by  용남 대표
  @description 외부 개발자 핸드오프 문서 — 이슈 발생 시 사용자(바이브코더) 가 자체 해결 못 하면 개발자가 본 문서만 보고 진단·해결하기 위한 단일 진실 원천.
  @audience    문유나 / 김민석 (외부 개발자)
- @scope       gongdo-ai-game (https://gongdo-ai-game.vercel.app/) v0.4.0-pilot 기준
+ @scope       gongdo-ai-game (https://gongdo-ai-game.vercel.app/) v0.4.1-feature-gate 기준
 
  ── 변경 이력 ──────────────────────────
+ v1.1.0 | 2026-04-28 | 꼼꼼이 (송PO 직접 patch) | BUNKER-2026-04-28-001 사이클 통합 — 안정 tag v0.4.1-feature-gate, S17 파일럿 후순위 4건 비활성화 (사이드바 3·4차시 + 도구바 음악·예시), manifest.json 단일 토글 진실 운영 메모(§10.7) 신설
  v1.0.1 | 2026-04-27 | 꼼꼼이 (송PO 직접 patch) | 김감사 QA Overall 84.5 보강 — line 번호 7곳 정정 + 'ok' 분기 후속 호출 보강 + 검증 매트릭스 #6 + commit 폐기 명시
  v1.0.0 | 2026-04-27 | 꼼꼼이 | 최초 작성 — BUNKER-2026-04-27-001 사이클 산출물 통합
  ============================================
@@ -23,7 +24,7 @@
 >
 > **대상 독자**: 외부 개발자. 사용자(바이브코더)가 이슈를 자가 해결하지 못할 때 진입.
 >
-> **현재 안정 버전**: `v0.4.0-pilot` (2026-04-27 commit `ad24a31`)
+> **현재 안정 버전**: `v0.4.1-feature-gate` (2026-04-28 commit `61cac7c`) — 직전 안정: `v0.4.0-pilot` (`ad24a31`)
 
 ---
 
@@ -52,10 +53,10 @@
 | **라이브 URL** | https://gongdo-ai-game.vercel.app/ |
 | **GitHub (운영)** | https://github.com/syn-glitch/gongdo-ai-game (`origin`) |
 | **GitHub (조직 fork)** | https://github.com/GongDo-Inc/gongdo-ai-game (`moon`, **push 금지**) |
-| **안정 tag** | [`v0.4.0-pilot`](https://github.com/syn-glitch/gongdo-ai-game/releases/tag/v0.4.0-pilot) |
+| **안정 tag** | [`v0.4.1-feature-gate`](https://github.com/syn-glitch/gongdo-ai-game/releases/tag/v0.4.1-feature-gate) (직전: `v0.4.0-pilot`) |
 | **Vercel 프로젝트** | `gongdo-ai-game` (팀: `syn-7532s-projects`) |
 | **로컬 클론 권장 위치** | `/Users/syn/Documents/dev/gongdo-ai-game/` |
-| **수업 운영 단계** | S17 파일럿 (manifest.json `version: v0.4.0`) |
+| **수업 운영 단계** | S17 파일럿 — 1·2차시 집중 테스트 (3·4차시 비활성, manifest.json `version: v0.4.1`) |
 
 ### 핵심 학습 흐름
 
@@ -542,7 +543,8 @@ cd 앱_app && vercel --prod --yes
 
 | Tag | Commit | Vercel deployment | 시점 |
 |---|---|---|---|
-| `v0.4.0-pilot` | `ad24a31` | `dpl_DLDgssJ9g34fQCZZE6wvB8t7mZek` | 2026-04-27 (S17 파일럿 안정 버전) |
+| `v0.4.1-feature-gate` | `61cac7c` | `dpl_2BbTBMVSuhZ3SjJCVPAx1Kc3UuQK` | 2026-04-28 (S17 파일럿 후순위 4건 비활성화 — 1·2차시 집중) |
+| `v0.4.0-pilot` | `ad24a31` | `dpl_DLDgssJ9g34fQCZZE6wvB8t7mZek` | 2026-04-27 (S17 파일럿 최초 안정) |
 
 추후 안정 버전마다 같은 매칭 (tag + commit + deployment ID) 을 GitHub Release 에 등재 권장.
 
@@ -653,11 +655,42 @@ moon   → https://github.com/GongDo-Inc/gongdo-ai-game.git    ← fork (백업/
 
 `app.js IP_META` 와 `chat.js` 매핑표 (line 232~237) 는 **항상 글자 단위 일치**. 한쪽만 변경 시 회귀 (CRITICAL-3 재발).
 
+### 10.7 manifest.json 단일 토글 진실 (BUNKER-2026-04-28-001)
+
+S17 파일럿 후순위 기능 4건이 `manifest.json` **한 곳**으로 비활성화됨:
+
+| 비활성 대상 | manifest.json 키 | 현재 값 |
+|---|---|---|
+| 사이드바 3차시 (효과음·BGM) | `lessons[no:3].enabled` | `false` |
+| 사이드바 4차시 (발표 자료) | `lessons[no:4].enabled` | `false` |
+| 도구바 [🎵 음악] | `featureFlags.music.enabled` | `false` |
+| 도구바 [🎮 예시] | `featureFlags.example.enabled` | `false` |
+
+**관리자 활성화 절차** (송용남·김민석·문유나):
+1. `앱_app/차시_lessons/manifest.json` 의 해당 키를 `false → true` 로 한 글자 수정
+2. `manifest.json` 의 `version` / `updated` 갱신 (선택)
+3. §7 배포 절차 반복 (`git push origin main` → `cd 앱_app && vercel --prod --yes`)
+4. 즉시 활성 복원. 코드(.js / .css / .html) 변경 X.
+
+**학생 UX**:
+- 비활성 차시 클릭 시: 토스트 `"3,4교시에 만나요"` (다음 수업 인지 유도)
+- 도구바 본 [음악]/[예시]: 회색 + 🔒 + 클릭 무반응 (`pointer-events: none`)
+- 옆에 빨간 [🔓 음악 활성화하기] / [🔓 예시 활성화하기] 노출
+- 모달 [확인] 시 동일 토스트 + 모달 닫힘 (키워드 미정 fallback)
+
+**추후 키워드 적용 시**: `app.js handleFeatureUnlockConfirm` 함수의 검증 로직 한 줄만 갈아끼우면 작동. 정규화 코드(`trim().replace(/\s+/g,'')`) + IME compositionend 처리 + ESC/백드롭 닫힘 모두 미리 배치됨. 위치: `app.js:1730~1810` 부근.
+
 ---
 
 ## 11. 변경 이력 요약
 
-본 문서 v1.0.0 기준 (안정 버전 `v0.4.0-pilot` = `ad24a31`).
+본 문서 v1.1.0 기준 (현재 안정 `v0.4.1-feature-gate` = `61cac7c`, 직전 안정 `v0.4.0-pilot` = `ad24a31`).
+
+### BUNKER-2026-04-28-001 사이클 (현재 안정)
+
+| commit | 변경 |
+|---|---|
+| `61cac7c` | feat(gate): S17 파일럿 후순위 4건 비활성화 — 사이드바 3·4차시 + 도구바 음악·예시. manifest.json `lessons[].enabled` + `featureFlags{music,example}.enabled` 단일 토글 진실. 캐릭터 게이트 코드 비건드림(회귀 위험 0). 키워드 미정 fallback (모달 [확인] 시 토스트 "3,4교시에 만나요" + 닫힘) ← **현재 안정 (v0.4.1-feature-gate)** |
 
 ### BUNKER-2026-04-27-001 사이클
 
@@ -768,5 +801,5 @@ vercel inspect <deployment-id-or-url>
 ---
 
 **문서 끝.**
-**버전**: v1.0.0 (2026-04-27, 꼼꼼이)
-**다음 갱신 권장**: 다음 사이클 (`v0.5.0` 또는 새 안정 tag) 출시 시 본 문서 v1.1.0 갱신
+**버전**: v1.1.0 (2026-04-28, 꼼꼼이 / 송PO 직접 patch)
+**다음 갱신 권장**: 추후 음악·예시 활성화 키워드가 작명되거나 §4.6/§5.5 에 기능 게이트 정식 명세가 신설될 때 v1.2.0 갱신. 또는 새 안정 tag(`v0.5.0+`) 출시 시.
