@@ -3,7 +3,7 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.11.0
+ * @version     v1.12.0
  * @updated     2026-04-27 (KST)
  * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리 (deploy_header + selectLesson 검증)
  * @ordered-by  용남 대표 (9차 지시 — A안 5개 모두 채택)
@@ -25,6 +25,9 @@
  *   - [유지] 활성화 모달 IME / ESC / 백드롭 / 취소 / 768px 안내 배너 / selectLesson hook
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.12.0 | 2026-04-27 | 송PO B안 patch | loadLessonFile 에 deploy_header 자동 stripping (lesson{N}.md 운영 메타데이터 학생 노출 차단) — 대표 라이브 검수 보강 #3
+ * v1.11.2 | 2026-04-27 | 송PO patch | applyIpPrompt = caret + setSelectionRange + focus + scrollTop (textarea native 자동 스크롤). scrollHeroLineIntoView 폐기 — 대표 라이브 보강 #2
+ * v1.11.1 | 2026-04-27 | 송PO patch | scrollHeroLineIntoView 추가 (hero line 자동 스크롤, 학생 즉시 발견) — 대표 라이브 검수 보강
  * v1.11.0 | 2026-04-27 | 클로이 4차 + 송PO 마무리 | applyIpPrompt 재설계 (in-place patch + mirror highlight + readonly 폐기) — 대표 9차 지시 A안 채택
  * v1.10.0 | 2026-04-27 | 클로이 | 핫픽스 #1 — IP_PROMPTS 절대 URL 변환 (CRITICAL-3 차단, 김감사 v2.0)
  * v1.9.0  | 2026-04-27 | 클로이 | 캐릭터 활성화 게이트 + 모달 + IP 자동 입력 (#editor-textarea, in-memory)
@@ -257,12 +260,18 @@
   }
 
   // 파일 경로 기준 캐시 — variants 까지 안전 처리 (BUNKER-2026-04-19-001 + JARVIS UI)
+  // deploy_header 자동 stripping (대표 라이브 검수 보강) — lesson{N}.md 의 파일 첫 HTML 주석은
+  // 운영 메타데이터(@version·@updated·@change-summary 등)이므로 학생에게 노출 X.
+  // COMMON_RULES <deploy_header> 표준은 유지하되 textarea 노출 시점에 stripping.
   async function loadLessonFile(file) {
     const editor = $('#editor-textarea');
     if (!state.lessonCache.has(file)) {
       const res = await fetch(`./차시_lessons/${file}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('문서 로딩 실패');
-      state.lessonCache.set(file, await res.text());
+      const raw = await res.text();
+      // 파일 시작 위치의 HTML 주석 (<!-- ... -->) 만 제거. 본문 중간 주석은 영향 X.
+      const stripped = raw.replace(/^\s*<!--[\s\S]*?-->\s*/, '');
+      state.lessonCache.set(file, stripped);
     }
     editor.value = state.lessonCache.get(file);
   }
@@ -1530,11 +1539,27 @@
     const replacement = `$1${meta.name} (이미지: ${meta.url})`;
     editor.value = before.replace(HERO_LINE_PATTERN, replacement);
 
-    // 시각 하이라이트 (영구 유지 — 자동 페이드 아웃 X)
-    highlightHeroLine(editor);
+    // ── caret + selection 으로 hero line 강조 + textarea native 자동 스크롤 ──
+    // mirror div 의 word-break 미스매치보다 textarea native selection 이 더 신뢰성.
+    // textarea ::selection 이 var(--color-yellow) 라 자동으로 베스트 케이스 색상.
+    // 학생이 클릭하면 selection 사라지지만 mirror highlight 는 영구 유지 (이중 안내).
+    const newM = editor.value.match(HERO_LINE_PATTERN);
+    if (newM) {
+      const start = newM.index;
+      const end   = newM.index + newM[0].length;
+      // focus 먼저 → setSelectionRange (반대 순서면 일부 브라우저에서 caret 끝으로 이동)
+      editor.focus();
+      editor.setSelectionRange(start, end);
+      // textarea 가 selection 영역을 자동으로 viewport 안으로 스크롤
+      // 일부 브라우저 미스인 경우 명시 보조:
+      const heroLineNum = (editor.value.slice(0, start).match(/\n/g) || []).length;
+      const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 24;
+      const targetTop = heroLineNum * lineHeight - editor.clientHeight / 3;
+      editor.scrollTop = Math.max(0, targetTop);
+    }
 
-    // 학생 편집 가능하게 포커스만 이동 (readonly 미적용)
-    editor.focus();
+    // 시각 하이라이트 (영구 유지) — selection 사라진 후에도 mirror 가 노란 배경 유지
+    highlightHeroLine(editor);
   }
 
   // ─────────── Hero line 시각 하이라이트 (E-3) ───────────
@@ -1609,6 +1634,7 @@
     ensureEditorMirror(editor);
     editor.dataset.heroHighlight = '1';
     renderHeroHighlight(editor);
+    // 자동 스크롤은 applyIpPrompt 가 caret + selection 기반으로 직접 처리 (textarea native)
   }
 
   function clearHeroHighlight() {

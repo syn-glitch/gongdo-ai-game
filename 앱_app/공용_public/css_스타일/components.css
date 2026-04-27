@@ -3,7 +3,7 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        components.css
- * @version     v1.2.0
+ * @version     v1.2.1
  * @updated     2026-04-27 (KST)
  * @agent       👧 클로이 FE (자비스 4차 사이클) — 송PO 가 stalled 마무리
  * @ordered-by  용남 대표 (9차 지시 — A안 5개 채택)
@@ -11,6 +11,7 @@
  *              v1.2.0 hero line 하이라이트 (mirror div + <mark>) 추가 — applyIpPrompt 재설계.
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.2.1 | 2026-04-27 | 송PO patch | .editor-hero-mark background = var(--color-yellow) #F7C548 (베스트 케이스 시각 강도, 대표 라이브 검수)
  * v1.2.0 | 2026-04-27 | 클로이 4차 + 송PO 마무리 | mirror div + .editor-hero-mark 노란 하이라이트 (대표 9차 A안)
  *                                                  v1.1.0 의 .editor-textarea.is-locked-prompt 는 readonly 폐기로 미사용 (제거 보류, 다음 정리)
  * v1.1.0 | 2026-04-27 | 클로이 | 캐릭터 잠금/활성/언락 모달/토스트/PC 안내 배너/에디터 readonly 시각
@@ -1830,7 +1831,7 @@ x-k { color: var(--color-brown); font-weight: 800; }
   display: none;
 }
 .editor-mirror .editor-hero-mark {
-  background: #FFF3A0;             /* yellow tint — editor-flash 와 일관 */
+  background: var(--color-yellow);  /* #F7C548 — 시스템 노란색 (palette.css), 베스트 케이스 시각 강도 */
   color: transparent;
   border-radius: 3px;
   /* mark 는 inline 요소라 padding 영향이 일부만. 노란 배경이 자연스럽게 라인 끝까지 이어지도록 */
