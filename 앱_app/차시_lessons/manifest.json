@@ -1,9 +1,10 @@
 {
-  "version": "v0.4.1",
+  "version": "v0.4.3",
   "updated": "2026-04-28",
   "featureFlags": {
     "music":   { "enabled": false, "_note": "도구바 [음악] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" },
-    "example": { "enabled": false, "_note": "도구바 [예시] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" }
+    "example": { "enabled": false, "_note": "도구바 [예시] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" },
+    "theme":   { "enabled": false, "_note": "도구바 [배경] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-003)" }
   },
   "lessons": [
     {

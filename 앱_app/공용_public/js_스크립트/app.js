@@ -3,25 +3,27 @@
  * 📋 배포 이력 (Deploy Header)
  * ============================================
  * @file        app.js
- * @version     v1.13.0
+ * @version     v1.13.1
  * @updated     2026-04-28 (KST)
- * @agent       👧 클로이 FE (JARVIS-2026-04-28-001 · 송PO 위임 BUNKER-2026-04-28-001)
+ * @agent       👧 클로이 FE (JARVIS-2026-04-28-002 · 송PO 위임 BUNKER-2026-04-28-003)
  * @ordered-by  용남 대표
  * @description 공도 AI-Game 메인 상호작용 스크립트 — 차시 로딩, 게임 iframe 주입, AI튜터 드로어 연동,
- *              캐릭터 활성화 게이트 + 비활성 차시(3·4) 사이드바 가드 + 도구바 음악·예시 게이트.
+ *              캐릭터 게이트 + 비활성 차시(3·4) 사이드바 가드 + 도구바 음악·예시·**배경** 게이트 (4건).
  *
  * @change-summary
- *   AS-IS v1.12.0: 캐릭터 게이트 + IP in-place patch + mirror highlight + lesson stripping
- *   TO-BE v1.13.0: 사이드바 비활성 차시 가드(toast "3,4교시에 만나요") + 도구바 음악·예시 게이트(캐릭터 패턴 복제, 키워드 미정 fallback)
+ *   AS-IS v1.13.0: 사이드바 가드 + 음악·예시 게이트
+ *   TO-BE v1.13.1: 도구바 [🎨 배경] 게이트 추가 ('theme' 케이스). _featureModalIds / refreshFeatureGateButtons / composing 처리 / _bindFeatureModal('theme') / initFeatureGate 클릭 핸들러 모두 'theme' 분기 추가.
  *
  * @features
- *   - [추가] renderLessonTree 에 lesson.enabled===false 가드 (.tree-folder.is-disabled + 클릭 토스트)
- *   - [추가] selectLesson 진입부 안전망 가드
- *   - [추가] isFeatureGated / refreshFeatureGateButtons / openFeatureUnlockModal / closeFeatureUnlockModal / handleFeatureUnlockConfirm
- *   - [추가] initFeatureGate() — 도구바 unlock 버튼 + 음악·예시 모달 이벤트 바인딩
- *   - [재사용] showCharacterToast — 메시지 "3,4교시에 만나요" (다음 수업 인지 유도, 대표 결정)
+ *   - [추가] _themeUnlockComposing 변수
+ *   - [추가] _featureModalIds 'theme' 케이스 (#theme-unlock-modal 등)
+ *   - [추가] refreshFeatureGateButtons 안 'theme' 처리 블록 (#btn-theme + #btn-theme-unlock 토글)
+ *   - [추가] handleFeatureUnlockConfirm composing 가드에 theme
+ *   - [추가] _bindFeatureModal setComposing/isComposing 람다에 theme
+ *   - [추가] initFeatureGate 안 #btn-theme-unlock 클릭 핸들러 + _bindFeatureModal('theme')
  *
  * ── 변경 이력 ──────────────────────────
+ * v1.13.1 | 2026-04-28 | 클로이 | 도구바 [🎨 배경] 게이트 추가 ('theme' 케이스) — BUNKER-2026-04-28-003
  * v1.13.0 | 2026-04-28 | 클로이 | 비활성 차시 가드 + 도구바 음악·예시 게이트 (BUNKER-2026-04-28-001)
  * v1.12.0 | 2026-04-27 | 송PO B안 patch | loadLessonFile 에 deploy_header 자동 stripping (lesson{N}.md 운영 메타데이터 학생 노출 차단) — 대표 라이브 검수 보강 #3
  * v1.11.2 | 2026-04-27 | 송PO patch | applyIpPrompt = caret + setSelectionRange + focus + scrollTop (textarea native 자동 스크롤). scrollHeroLineIntoView 폐기 — 대표 라이브 보강 #2
@@ -1781,6 +1783,7 @@
   // 추후 키워드 작명 시 handleFeatureUnlockConfirm 안의 검증 로직 한 줄만 갈아끼우면 작동.
   let _bgmUnlockComposing = false;
   let _variantUnlockComposing = false;
+  let _themeUnlockComposing = false;   // BUNKER-2026-04-28-003
 
   function isFeatureGated(featureKey) {
     const flags = state.manifest && state.manifest.featureFlags;
@@ -1825,12 +1828,30 @@
         variantUnlockBtn.hidden = true;
       }
     }
+    // 배경 (BUNKER-2026-04-28-003)
+    const themeBtn = $('#btn-theme');
+    const themeUnlockBtn = $('#btn-theme-unlock');
+    if (themeBtn && themeUnlockBtn) {
+      if (isFeatureGated('theme')) {
+        themeBtn.disabled = true;
+        themeBtn.classList.add('is-locked');
+        themeBtn.setAttribute('aria-label', '배경 (잠김)');
+        themeBtn.title = '선생님이 알려주실 때 켜요';
+        themeUnlockBtn.hidden = false;
+      } else {
+        themeBtn.disabled = false;
+        themeBtn.classList.remove('is-locked');
+        themeBtn.setAttribute('aria-label', '배경 고르기');
+        themeBtn.removeAttribute('title');
+        themeUnlockBtn.hidden = true;
+      }
+    }
   }
 
   function _featureModalIds(featureKey) {
-    return featureKey === 'music'
-      ? { modal: '#bgm-unlock-modal', input: '#bgm-unlock-input', error: '#bgm-unlock-error', confirm: '#bgm-unlock-confirm' }
-      : { modal: '#variant-unlock-modal', input: '#variant-unlock-input', error: '#variant-unlock-error', confirm: '#variant-unlock-confirm' };
+    if (featureKey === 'music') return { modal: '#bgm-unlock-modal',     input: '#bgm-unlock-input',     error: '#bgm-unlock-error',     confirm: '#bgm-unlock-confirm' };
+    if (featureKey === 'theme') return { modal: '#theme-unlock-modal',   input: '#theme-unlock-input',   error: '#theme-unlock-error',   confirm: '#theme-unlock-confirm' };
+    return                              { modal: '#variant-unlock-modal', input: '#variant-unlock-input', error: '#variant-unlock-error', confirm: '#variant-unlock-confirm' };
   }
 
   function openFeatureUnlockModal(featureKey) {
@@ -1842,6 +1863,7 @@
     if (input) input.value = '';
     if (confirmBtn) confirmBtn.disabled = true;
     if (featureKey === 'music') _bgmUnlockComposing = false;
+    else if (featureKey === 'theme') _themeUnlockComposing = false;
     else _variantUnlockComposing = false;
     setTimeout(() => input && input.focus(), 30);
   }
@@ -1865,6 +1887,7 @@
     //   else { /* 실패 안내 */ }
     if (featureKey === 'music' && _bgmUnlockComposing) return;
     if (featureKey === 'example' && _variantUnlockComposing) return;
+    if (featureKey === 'theme' && _themeUnlockComposing) return;
     closeFeatureUnlockModal(featureKey);
     showCharacterToast('3,4교시에 만나요');
   }
@@ -1885,10 +1908,19 @@
         openFeatureUnlockModal('example');
       });
     }
+    // BUNKER-2026-04-28-003: 배경
+    const themeUnlock = $('#btn-theme-unlock');
+    if (themeUnlock) {
+      themeUnlock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openFeatureUnlockModal('theme');
+      });
+    }
 
-    // 모달 폼 / 입력 / 취소 / 백드롭 — 음악
+    // 모달 폼 / 입력 / 취소 / 백드롭 — 음악·예시·배경
     _bindFeatureModal('music');
     _bindFeatureModal('example');
+    _bindFeatureModal('theme');
 
     // 초기 동기화 — manifest 가 이미 로드돼 있으면 즉시, 아니면 initLessons 가 호출
     if (state.manifest) refreshFeatureGateButtons();
@@ -1908,9 +1940,13 @@
 
     const setComposing = (val) => {
       if (featureKey === 'music') _bgmUnlockComposing = val;
+      else if (featureKey === 'theme') _themeUnlockComposing = val;
       else _variantUnlockComposing = val;
     };
-    const isComposing = () => featureKey === 'music' ? _bgmUnlockComposing : _variantUnlockComposing;
+    const isComposing = () =>
+      featureKey === 'music' ? _bgmUnlockComposing :
+      featureKey === 'theme' ? _themeUnlockComposing :
+                                _variantUnlockComposing;
 
     if (input) {
       input.addEventListener('compositionstart', () => {
