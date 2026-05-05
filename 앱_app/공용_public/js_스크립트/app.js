@@ -859,9 +859,9 @@
     if (sender === 'bot') {
       const img = document.createElement('img');
       img.className = 'mascot-img';
-      img.src = './에셋_assets/캐릭터_characters/gongdossem.png';
+      img.src = './에셋_assets/캐릭터_characters/gongdossem_idle.svg';
       img.alt = '';
-      img.onerror = () => { avatar.textContent = '🦸'; };
+      img.onerror = () => { avatar.textContent = '📚'; };
       avatar.appendChild(img);
     } else {
       avatar.textContent = '🙋';
@@ -1417,28 +1417,28 @@
   }
 
   // ─────────── 캐릭터 패널 (S10 + JARVIS-2026-04-27-001 활성화 게이트) ───────────
-  // 모든 차시(1·2·3·4) 기본 비활성. "ㅋㅋ도와줘" 키워드 입력 시 in-memory 활성화.
+  // 모든 차시(1·2·3·4) 기본 비활성. "별이도와줘" 키워드 입력 시 in-memory 활성화.
   //
   // ★ 영속성 정책 (대표 2차 결정 🅱️):
   //   - in-memory 클로저 변수 `_characterUnlocked` 만 사용
   //   - sessionStorage / localStorage 둘 다 절대 사용 금지
   //   - F5 새로고침 = 모듈 재로드 = 자동 false → 키워드 재입력 요구
   //   - SPA 차시 전환 = 페이지 이동 X = 메모리 보존 → 1·3·4차시 오가도 활성 유지
-  const CHAR_UNLOCK_KEYWORD = 'ㅋㅋ도와줘';   // 단일 진실 원천
+  const CHAR_UNLOCK_KEYWORD = '별이도와줘';   // 단일 진실 원천
 
-  // IP 메타 — 4차 사이클 E-1: lesson 본문 hero line 만 in-place patch 위해 분리.
-  // chat.js v1.5.0 매핑표(line 228~233) 절대 URL 형식과 정합 (CRITICAL-3 차단).
+  // 캐릭터 메타 — lesson 본문 hero line 만 in-place patch 위해 분리.
+  // chat.js 매핑표 절대 URL 형식과 정합.
   const IP_ASSET_BASE = 'https://gongdo-ai-game.vercel.app/에셋_assets/캐릭터_characters';
   const IP_META = {
-    kk:   { name: 'ㅋㅋ',  url: `${IP_ASSET_BASE}/kk_idle.png` },
-    tory: { name: '토리',  url: `${IP_ASSET_BASE}/tory_idle.png` },
-    bob:  { name: '밥',    url: `${IP_ASSET_BASE}/bob_idle.png` },
-    leon: { name: '레옹',  url: `${IP_ASSET_BASE}/leon_idle.png` },
+    star:   { name: '별이',    url: `${IP_ASSET_BASE}/star_idle.svg` },
+    cloud:  { name: '구름이',  url: `${IP_ASSET_BASE}/cloud_idle.svg` },
+    drop:   { name: '물방울',  url: `${IP_ASSET_BASE}/drop_idle.svg` },
+    sprout: { name: '새싹이',  url: `${IP_ASSET_BASE}/sprout_idle.svg` },
   };
   // 정규식: lesson1·2·1_catch·1_jump 모두 매치
   //   lesson1:        `- 주인공: 파란 우주선`
-  //   lesson1_catch:  `- 주인공: ㅋㅋ`
-  //   lesson2:        `- 주인공: 토리`
+  //   lesson1_catch:  `- 주인공: 별이`
+  //   lesson2:        `- 주인공: 구름이`
   // 그룹: $1=prefix("- 주인공: "), $2=기존 이름, $3=옵션(이전 patch 의 (이미지: ...) — 누적 방지)
   const HERO_LINE_PATTERN = /^(- 주인공:\s*)([^\n(]*?)(\s*\(이미지:[^)]*\))?\s*$/m;
 
@@ -1675,7 +1675,7 @@
     const p = setupPopover({ btnId: 'btn-character', popoverId: 'character-popover', closeId: 'character-popover-close' });
     if (!p) return;
 
-    // ── 4 IP 셀 클릭 → hero line in-place patch (4차 사이클 E-2) ──
+    // ── 4 캐릭터 셀 클릭 → hero line in-place patch ──
     $$('.character-card').forEach((card) => {
       card.addEventListener('click', () => {
         const key = card.dataset.char;

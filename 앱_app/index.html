@@ -141,41 +141,41 @@
           </p>
         </div>
 
-        <div id="character-popover" class="character-popover" hidden role="dialog" aria-label="넷마블 캐릭터 고르기">
+        <div id="character-popover" class="character-popover" hidden role="dialog" aria-label="주인공 고르기">
           <div class="character-popover-head">
             <h3 class="character-popover-title">🎭 주인공을 골라볼까요?</h3>
             <button type="button" class="drawer-close character-popover-close" id="character-popover-close" aria-label="닫기">✕</button>
           </div>
           <ul class="character-grid" id="character-grid">
             <li>
-              <button type="button" class="character-card" data-char="kk" data-label="ㅋㅋ" data-file="kk_idle.png" data-emoji="🦸">
-                <img class="character-img" src="./에셋_assets/캐릭터_characters/kk_em.png" alt="ㅋㅋ 캐릭터"
-                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🦸'}))">
-                <span class="character-name">ㅋㅋ</span>
+              <button type="button" class="character-card" data-char="star" data-label="별이" data-file="star_idle.svg" data-emoji="⭐">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/star_em.svg" alt="별이 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'⭐'}))">
+                <span class="character-name">별이</span>
                 <span class="character-desc">용감 장난꾸러기</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="tory" data-label="토리" data-file="tory_idle.png" data-emoji="👒">
-                <img class="character-img" src="./에셋_assets/캐릭터_characters/tory_em.png" alt="토리 캐릭터"
-                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'👒'}))">
-                <span class="character-name">토리</span>
+              <button type="button" class="character-card" data-char="cloud" data-label="구름이" data-file="cloud_idle.svg" data-emoji="☁️">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/cloud_em.svg" alt="구름이 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'☁️'}))">
+                <span class="character-name">구름이</span>
                 <span class="character-desc">똑똑 다정</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="bob" data-label="밥" data-file="bob_idle.png" data-emoji="🐰">
-                <img class="character-img" src="./에셋_assets/캐릭터_characters/bob_em.png" alt="밥 캐릭터"
-                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🐰'}))">
-                <span class="character-name">밥</span>
+              <button type="button" class="character-card" data-char="drop" data-label="물방울" data-file="drop_idle.svg" data-emoji="💧">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/drop_em.svg" alt="물방울 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'💧'}))">
+                <span class="character-name">물방울</span>
                 <span class="character-desc">느긋 푸근</span>
               </button>
             </li>
             <li>
-              <button type="button" class="character-card" data-char="leon" data-label="레옹" data-file="leon_idle.png" data-emoji="🦁">
-                <img class="character-img" src="./에셋_assets/캐릭터_characters/leon_em.png" alt="레옹 캐릭터"
-                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🦁'}))">
-                <span class="character-name">레옹</span>
+              <button type="button" class="character-card" data-char="sprout" data-label="새싹이" data-file="sprout_idle.svg" data-emoji="🌱">
+                <img class="character-img" src="./에셋_assets/캐릭터_characters/sprout_em.svg" alt="새싹이 캐릭터"
+                     onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'character-emoji',textContent:'🌱'}))">
+                <span class="character-name">새싹이</span>
                 <span class="character-desc">용맹 든든</span>
               </button>
             </li>
@@ -338,8 +338,8 @@
       </div>
       <div class="game-viewport" id="game-viewport">
         <div class="game-placeholder" aria-hidden="true">
-          <img class="placeholder-love" src="./에셋_assets/캐릭터_characters/welcome_love.png" alt=""
-               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-emoji',textContent:'🚀'}))">
+          <img class="placeholder-love" src="./에셋_assets/캐릭터_characters/welcome_play.svg" alt=""
+               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-emoji',textContent:'🎮'}))">
           <p class="placeholder-text">게임을 기다리고 있어요</p>
         </div>
       </div>
@@ -347,7 +347,7 @@
 
   </main>
 
-  <!-- 플로팅 AI튜터 호출 버튼 (ㅋㅋ 캐릭터) -->
+  <!-- 플로팅 AI튜터 호출 버튼 (공도쌤) -->
   <button
     type="button"
     class="tutor-fab"
@@ -355,8 +355,8 @@
     aria-label="공도쌤 AI튜터 열기"
     aria-controls="tutor-drawer"
     aria-expanded="false">
-    <img class="tutor-fab-avatar mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt="" aria-hidden="true"
-         onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tutor-fab-avatar',textContent:'🦸'}))">
+    <img class="tutor-fab-avatar mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem_idle.svg" alt="" aria-hidden="true"
+         onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tutor-fab-avatar',textContent:'📚'}))">
     <span class="tutor-fab-label">AI튜터</span>
     <span class="tutor-fab-pulse" aria-hidden="true"></span>
   </button>
@@ -366,8 +366,8 @@
     <header class="drawer-head">
       <h2 id="tutor-drawer-title" class="drawer-head-title">
         <span class="drawer-head-avatar" aria-hidden="true">
-          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt=""
-               onerror="this.replaceWith(document.createTextNode('🦸'))">
+          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem_idle.svg" alt=""
+               onerror="this.replaceWith(document.createTextNode('📚'))">
         </span>
         공도쌤에게 물어보기
       </h2>
@@ -378,8 +378,8 @@
     <div class="tutor-messages" id="tutor-messages" role="log" aria-live="polite" aria-label="튜터 대화 내용">
       <div class="tutor-message tutor-message-bot">
         <span class="tutor-avatar" aria-hidden="true">
-          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt=""
-               onerror="this.replaceWith(document.createTextNode('🦸'))">
+          <img class="mascot-img" src="./에셋_assets/캐릭터_characters/gongdossem_idle.svg" alt=""
+               onerror="this.replaceWith(document.createTextNode('📚'))">
         </span>
         <div class="tutor-bubble">
           안녕하세요! 저는 공도쌤이에요. 🌟<br>
@@ -415,12 +415,12 @@
         <label class="present-field">
           <span class="present-label">🎮 게임 제목</span>
           <input type="text" id="present-title-input" class="present-input"
-                 placeholder="예: 토리의 지구 지키기" maxlength="40" required>
+                 placeholder="예: 별이의 지구 지키기" maxlength="40" required>
         </label>
         <label class="present-field">
           <span class="present-label">✨ 한 줄 소개</span>
           <input type="text" id="present-tagline" class="present-input"
-                 placeholder="예: 토리가 주사위 몬스터로부터 지구를 지키는 슈팅 게임!" maxlength="120">
+                 placeholder="예: 별이가 주사위 몬스터로부터 지구를 지키는 슈팅 게임!" maxlength="120">
         </label>
         <label class="present-field">
           <span class="present-label">😄 가장 재밌었던 점</span>
@@ -483,8 +483,8 @@
   <div id="generating-modal" class="modal-overlay" hidden role="status" aria-live="polite" aria-labelledby="gen-title">
     <div class="modal-card generating-card">
       <div class="gen-character" aria-hidden="true">
-        <img class="mascot-img mascot-img-xl" src="./에셋_assets/캐릭터_characters/gongdossem.png" alt="공도쌤"
-             onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🦸',style:'font-size:84px'}))">
+        <img class="mascot-img mascot-img-xl" src="./에셋_assets/캐릭터_characters/gongdossem_em.svg" alt="공도쌤"
+             onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'📚',style:'font-size:84px'}))">
       </div>
       <h2 id="gen-title" class="gen-title">AI가 게임을 만들고 있어요</h2>
       <p id="gen-message" class="gen-message">우주선에 시동을 걸어요... 🚀</p>
