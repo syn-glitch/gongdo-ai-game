@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#6B4F3A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <polygon points="60,14 73,48 110,48 80,68 92,104 60,84 28,104 40,68 10,48 47,48"
+           fill="#FFE066" stroke="#6B4F3A" stroke-width="1.5" stroke-linejoin="round" filter="url(#sh)"/>
+  <!-- 진한 분홍 볼 -->
+  <ellipse cx="40" cy="65" rx="6" ry="4" fill="#FF8FA3" opacity="0.85"/>
+  <ellipse cx="80" cy="65" rx="6" ry="4" fill="#FF8FA3" opacity="0.85"/>
+  <!-- 큰 타원 눈 + 하이라이트 -->
+  <ellipse cx="49" cy="56" rx="5" ry="6.5" fill="#3D2914"/>
+  <ellipse cx="71" cy="56" rx="5" ry="6.5" fill="#3D2914"/>
+  <ellipse cx="50.5" cy="53" rx="2" ry="2.5" fill="#fff"/>
+  <ellipse cx="72.5" cy="53" rx="2" ry="2.5" fill="#fff"/>
+  <circle cx="48" cy="59" r="0.8" fill="#fff"/>
+  <circle cx="70" cy="59" r="0.8" fill="#fff"/>
+  <!-- 작은 U 미소 -->
+  <path d="M55 70 Q60 74 65 70" fill="none" stroke="#3D2914" stroke-width="2" stroke-linecap="round"/>
+  <!-- ✨ 반짝 -->
+  <g fill="#FFFFFF">
+    <path d="M95 28 L97 32 L101 34 L97 36 L95 40 L93 36 L89 34 L93 32 Z" opacity="0.9"/>
+  </g>
+</svg>

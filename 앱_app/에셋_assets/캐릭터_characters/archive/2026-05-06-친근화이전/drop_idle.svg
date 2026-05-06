@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+    <radialGradient id="dg" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#A5D8FF"/>
+      <stop offset="100%" stop-color="#4DABF7"/>
+    </radialGradient>
+  </defs>
+  <path d="M60 12 C 60 12, 22 50, 22 76 C 22 96, 38 110, 60 110 C 82 110, 98 96, 98 76 C 98 50, 60 12, 60 12 Z"
+        fill="url(#dg)" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round" filter="url(#sh)"/>
+  <ellipse cx="42" cy="58" rx="6" ry="8" fill="#fff" opacity="0.5"/>
+  <circle cx="40" cy="80" r="4.5" fill="#FFA8A8" opacity="0.7"/>
+  <circle cx="80" cy="80" r="4.5" fill="#FFA8A8" opacity="0.7"/>
+  <circle cx="50" cy="68" r="5" fill="#1A1A1A"/>
+  <circle cx="70" cy="68" r="5" fill="#1A1A1A"/>
+  <circle cx="51.5" cy="66.5" r="1.6" fill="#fff"/>
+  <circle cx="71.5" cy="66.5" r="1.6" fill="#fff"/>
+  <path d="M52 84 Q60 90 68 84" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
+</svg>

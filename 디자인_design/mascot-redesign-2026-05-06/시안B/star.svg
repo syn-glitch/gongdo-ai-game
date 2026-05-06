@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="bsB" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFF4D6"/>
+      <stop offset="100%" stop-color="#FFE99A"/>
+    </radialGradient>
+  </defs>
+  <polygon points="60,16 72,48 108,48 80,68 90,102 60,84 30,102 40,68 12,48 48,48"
+           fill="url(#bsB)" stroke="#F5DC78" stroke-width="0.6" stroke-linejoin="round"/>
+  <!-- 부드러운 볼 -->
+  <ellipse cx="42" cy="64" rx="6" ry="3.5" fill="#FFCCD5" opacity="0.7"/>
+  <ellipse cx="78" cy="64" rx="6" ry="3.5" fill="#FFCCD5" opacity="0.7"/>
+  <!-- 작은 점눈 -->
+  <circle cx="50" cy="56" r="2.2" fill="#5B4636"/>
+  <circle cx="70" cy="56" r="2.2" fill="#5B4636"/>
+  <!-- 졸려 눈썹 -->
+  <path d="M45 50 Q50 49 55 51" fill="none" stroke="#5B4636" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M65 51 Q70 49 75 50" fill="none" stroke="#5B4636" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- · 입 -->
+  <ellipse cx="60" cy="68" rx="2" ry="1.2" fill="#5B4636"/>
+</svg>

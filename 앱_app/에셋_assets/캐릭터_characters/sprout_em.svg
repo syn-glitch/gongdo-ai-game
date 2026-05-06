@@ -1,23 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#1A1A1A" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <!-- 반짝 ✨ 위에 -->
   <g stroke="#37B24D" stroke-width="3" stroke-linecap="round" opacity="0.7">
     <line x1="14" y1="30" x2="22" y2="34"/>
     <line x1="106" y1="30" x2="98" y2="34"/>
-    <line x1="60" y1="6" x2="60" y2="14"/>
+    <line x1="60" y1="2" x2="60" y2="10"/>
   </g>
-  <ellipse cx="60" cy="108" rx="42" ry="6" fill="#8B5A2B" stroke="#1A1A1A" stroke-width="2"/>
-  <path d="M60 108 L60 70" stroke="#37B24D" stroke-width="6" stroke-linecap="round"/>
-  <!-- 잎 펼침 (더 넓게) -->
-  <path d="M60 75 Q35 65 14 44 Q34 38 58 60 Z" fill="#51CF66" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M60 75 Q85 65 106 44 Q86 38 62 60 Z" fill="#51CF66" stroke="#1A1A1A" stroke-width="2.5" stroke-linejoin="round"/>
-  <circle cx="60" cy="48" r="28" fill="#69DB7C" stroke="#1A1A1A" stroke-width="3"/>
-  <circle cx="44" cy="55" r="5" fill="#FF8787" opacity="0.85"/>
-  <circle cx="76" cy="55" r="5" fill="#FF8787" opacity="0.85"/>
-  <!-- 결연한 눈 -->
-  <path d="M44 42 Q51 38 58 42" fill="none" stroke="#1A1A1A" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M62 42 Q69 38 76 42" fill="none" stroke="#1A1A1A" stroke-width="3.2" stroke-linecap="round"/>
-  <circle cx="51" cy="46" r="4" fill="#1A1A1A"/>
-  <circle cx="69" cy="46" r="4" fill="#1A1A1A"/>
-  <!-- 활짝 입 -->
-  <ellipse cx="60" cy="60" rx="10" ry="7" fill="#1A1A1A"/>
-  <ellipse cx="60" cy="63" rx="6" ry="2.5" fill="#FF6B6B"/>
+  <ellipse cx="60" cy="114" rx="44" ry="5" fill="#8B5A2B" stroke="#1A1A1A" stroke-width="1.5"/>
+  <path d="M60 114 L60 78" stroke="#37B24D" stroke-width="6" stroke-linecap="round"/>
+  <!-- 잎 더 위로 솟음 -->
+  <path d="M60 82 Q34 70 14 50 Q34 42 58 64 Z" fill="#5BD66E" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M60 82 Q86 70 106 50 Q86 42 62 64 Z" fill="#5BD66E" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+  <circle cx="60" cy="42" r="34" fill="#74E384" stroke="#1A1A1A" stroke-width="2" filter="url(#sh)"/>
+  <path d="M40 54 C 37 50, 32 52, 34 58 C 35 61, 40 64, 42 66 C 44 64, 49 61, 50 58 C 52 52, 47 50, 44 54 Z" fill="#FF5777"/>
+  <path d="M76 54 C 73 50, 68 52, 70 58 C 71 61, 76 64, 78 66 C 80 64, 85 61, 86 58 C 88 52, 83 50, 80 54 Z" fill="#FF5777"/>
+  <!-- ^^ 반쪽 눈 -->
+  <path d="M44 46 Q50 40 56 46" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M64 46 Q70 40 76 46" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
+  <!-- 활짝 ω -->
+  <path d="M50 60 Q55 68 60 63 Q65 68 70 60" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="bgB" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#FFE9D5"/>
+      <stop offset="100%" stop-color="#FFD0A8"/>
+    </radialGradient>
+  </defs>
+  <rect x="34" y="92" width="52" height="16" rx="2" fill="#FFE9A8" stroke="#E5C97D" stroke-width="0.6"/>
+  <line x1="60" y1="92" x2="60" y2="108" stroke="#E5C97D" stroke-width="0.8"/>
+  <circle cx="60" cy="52" r="36" fill="url(#bgB)" stroke="#E5B58A" stroke-width="0.6"/>
+  <!-- 살짝 머리 -->
+  <path d="M30 42 Q36 28 50 30 Q60 25 70 30 Q84 28 90 42 Q86 34 78 32 Q70 26 60 30 Q50 26 42 32 Q34 34 30 42 Z"
+        fill="#C99877" stroke="#A6815F" stroke-width="0.6"/>
+  <!-- 동그란 안경 (얇게) -->
+  <circle cx="48" cy="54" r="9" fill="#fff" fill-opacity="0.3" stroke="#A6815F" stroke-width="1.4"/>
+  <circle cx="72" cy="54" r="9" fill="#fff" fill-opacity="0.3" stroke="#A6815F" stroke-width="1.4"/>
+  <line x1="57" y1="54" x2="63" y2="54" stroke="#A6815F" stroke-width="1.4"/>
+  <circle cx="48" cy="55" r="2" fill="#5B4636"/>
+  <circle cx="72" cy="55" r="2" fill="#5B4636"/>
+  <path d="M44 49 Q48 48 52 49" fill="none" stroke="#5B4636" stroke-width="1.1" stroke-linecap="round"/>
+  <path d="M68 49 Q72 48 76 49" fill="none" stroke="#5B4636" stroke-width="1.1" stroke-linecap="round"/>
+  <ellipse cx="32" cy="66" rx="6" ry="3.5" fill="#FFCCD5" opacity="0.75"/>
+  <ellipse cx="88" cy="66" rx="6" ry="3.5" fill="#FFCCD5" opacity="0.75"/>
+  <ellipse cx="60" cy="72" rx="2" ry="1.2" fill="#5B4636"/>
+</svg>

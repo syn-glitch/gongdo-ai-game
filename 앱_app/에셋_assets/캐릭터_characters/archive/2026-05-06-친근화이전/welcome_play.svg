@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" width="240" height="160">
+  <defs>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+    <linearGradient id="pg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD43B"/>
+      <stop offset="100%" stop-color="#FAB005"/>
+    </linearGradient>
+  </defs>
+  <!-- 떠다니는 별/도형 -->
+  <g opacity="0.85">
+    <polygon points="30,30 35,42 48,42 38,50 42,62 30,55 18,62 22,50 12,42 25,42"
+             fill="#FFD43B" stroke="#1A1A1A" stroke-width="2"/>
+    <circle cx="210" cy="40" r="10" fill="#B197FC" stroke="#1A1A1A" stroke-width="2"/>
+    <path d="M212 110 C 212 110, 200 122, 200 132 C 200 140, 207 145, 215 145 C 223 145, 230 140, 230 132 C 230 122, 212 110, 212 110 Z"
+          fill="#4DABF7" stroke="#1A1A1A" stroke-width="2"/>
+    <path d="M30 130 L30 118 M22 124 L38 124"
+          stroke="#37B24D" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="30" cy="115" rx="8" ry="4" fill="#51CF66" stroke="#1A1A1A" stroke-width="2"/>
+  </g>
+  <!-- 게임패드 -->
+  <g filter="url(#sh)">
+    <path d="M70 75 Q60 75 60 90 L60 115 Q60 130 75 130 L165 130 Q180 130 180 115 L180 90 Q180 75 170 75 Z"
+          fill="url(#pg)" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round"/>
+    <!-- D-pad -->
+    <rect x="80" y="100" width="22" height="6" rx="1" fill="#1A1A1A"/>
+    <rect x="88" y="92" width="6" height="22" rx="1" fill="#1A1A1A"/>
+    <!-- 버튼 -->
+    <circle cx="155" cy="98" r="5" fill="#FF6B6B" stroke="#1A1A1A" stroke-width="2"/>
+    <circle cx="167" cy="108" r="5" fill="#4DABF7" stroke="#1A1A1A" stroke-width="2"/>
+    <circle cx="143" cy="108" r="5" fill="#51CF66" stroke="#1A1A1A" stroke-width="2"/>
+    <circle cx="155" cy="118" r="5" fill="#FFD43B" stroke="#1A1A1A" stroke-width="2"/>
+    <!-- 가운데 화면 -->
+    <rect x="105" y="88" width="30" height="20" rx="2" fill="#1A1A1A"/>
+    <rect x="108" y="91" width="24" height="14" fill="#69DB7C"/>
+  </g>
+</svg>
