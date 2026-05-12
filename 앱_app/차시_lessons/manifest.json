@@ -1,6 +1,6 @@
 {
-  "version": "v0.4.3",
-  "updated": "2026-04-28",
+  "version": "v0.4.4",
+  "updated": "2026-05-12",
   "featureFlags": {
     "music":   { "enabled": false, "_note": "도구바 [음악] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" },
     "example": { "enabled": false, "_note": "도구바 [예시] 버튼. true 로 바꾸면 즉시 활성화됨. (BUNKER-2026-04-28-001)" },
@@ -34,7 +34,7 @@
     },
     {
       "no": 3,
-      "enabled": false,
+      "enabled": true,
       "title": "효과음·BGM",
       "emoji": "🎵",
       "file": "lesson3.md",
@@ -44,7 +44,7 @@
     },
     {
       "no": 4,
-      "enabled": false,
+      "enabled": true,
       "title": "발표 자료 만들기",
       "emoji": "📣",
       "file": "lesson4.md",
